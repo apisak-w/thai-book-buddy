@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { checkAdminAuth } from "../rate-limit";
 
 function adminClient() {
   return createClient(
@@ -9,9 +10,8 @@ function adminClient() {
 }
 
 export async function GET(req: NextRequest) {
-  if (req.headers.get("x-admin-password") !== process.env.ADMIN_PASSWORD) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = checkAdminAuth(req);
+  if (denied) return denied;
 
   const supabase = adminClient();
 
