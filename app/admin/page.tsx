@@ -149,12 +149,12 @@ export default function AdminPage() {
     const json = await res.json();
     setData(json);
     setAuthed(true);
-    localStorage.setItem("admin_pw", pw);
+    sessionStorage.setItem("admin_pw", pw);
   }, []);
 
   // Auto-try stored password on mount
   useEffect(() => {
-    const stored = localStorage.getItem("admin_pw");
+    const stored = sessionStorage.getItem("admin_pw");
     if (stored) {
       setPassword(stored);
       fetchData(stored);
@@ -316,7 +316,7 @@ export default function AdminPage() {
             </button>
             <button
               onClick={() => {
-                localStorage.removeItem("admin_pw");
+                sessionStorage.removeItem("admin_pw");
                 setAuthed(false);
                 setData(null);
                 setPassword("");

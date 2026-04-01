@@ -65,7 +65,7 @@ export default function MyListPage() {
     if (!isLoggedIn) return;
 
     // Dev bypass: use mock data to preview UI without a Supabase session
-    if (process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === "true") {
+    if (process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === "true") {
       setUserId("dev-user");
       setPublishers([
         { id: "p1", name_th: "สำนักพิมพ์แสงดาว", name_en: "Sangdao Publishing", booths: [{ zone: "A", booth_number: "A01" }] },
@@ -234,7 +234,7 @@ export default function MyListPage() {
       else next.delete(publisherId);
       return next;
     });
-    if (process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH !== "true" && userId) {
+    if (!(process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === "true") && userId) {
       const supabase = getSupabase();
       await supabase.from("user_selections").update({ note }).eq("user_id", userId).eq("publisher_id", publisherId);
     }

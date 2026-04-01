@@ -63,7 +63,7 @@ async function signInWithLINE(
         supabase.from("profiles").upsert(
           { id: session.user.id, display_name: meta.display_name ?? null },
           { onConflict: "id", ignoreDuplicates: true }
-        ).then(({ error }) => { if (error) console.error("[Profile upsert]", error.message); });
+        ).then(({ error }) => { if (error) console.error("[DB] Profile re-create failed:", error.message); });
       }
     } else {
       localStorage.setItem(ONBOARDING_KEY, "true");
@@ -142,7 +142,7 @@ async function signInWithLINE(
 
   if (onboardingCached) {
     // Don't wait for profile check — fire upsert and return immediately
-    upsertPromise.then(({ error }) => { if (error) console.error("[Profile upsert]", error.message); });
+    upsertPromise.then(({ error }) => { if (error) console.error("[DB] Profile upsert failed:", error.message); });
     return { error: null, needsOnboarding: false };
   }
 
@@ -171,7 +171,7 @@ function LIFFProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Dev bypass: skip LIFF entirely, force logged-in state
-    if (process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === "true") {
+    if (process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === "true") {
       setIsLoggedIn(true);
       setIsLoading(false);
       return;
@@ -216,7 +216,7 @@ function LIFFProvider({ children }: { children: React.ReactNode }) {
                   supabase.from("sessions").insert({ user_id: uid })
                     .then(({ error }) => {
                       if (!error) localStorage.setItem(sessionKey, "1");
-                      else console.error("[Session insert]", error.message);
+                      else console.error("[DB] Session insert failed:", error.message);
                     });
                 });
               }
