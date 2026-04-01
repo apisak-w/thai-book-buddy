@@ -168,7 +168,7 @@ function LIFFProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Dev bypass: skip LIFF entirely, force logged-in state
-    if (process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === "true") {
+    if (process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === "true") {
       setIsLoggedIn(true);
       setIsLoading(false);
       return;
