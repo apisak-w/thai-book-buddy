@@ -62,7 +62,7 @@ async function signInWithLINE(
       supabase.from("profiles").upsert(
         { id: session.user.id, display_name: meta.display_name ?? null },
         { onConflict: "id", ignoreDuplicates: false }
-      ).then();
+      ).then(({ error }) => { if (error) console.error("[DB] Profile re-create failed:", error.message); });
     } else {
       localStorage.setItem(ONBOARDING_KEY, "true");
     }
@@ -139,7 +139,7 @@ async function signInWithLINE(
 
   if (onboardingCached) {
     // Don't wait for profile check — fire upsert and return immediately
-    upsertPromise.then();
+    upsertPromise.then(({ error }) => { if (error) console.error("[DB] Profile upsert failed:", error.message); });
     return { error: null, needsOnboarding: false };
   }
 
@@ -206,7 +206,8 @@ function LIFFProvider({ children }: { children: React.ReactNode }) {
                 const supabase = getSupabase();
                 supabase.auth.getSession().then(({ data }) => {
                   if (data?.session?.user) {
-                    supabase.from("sessions").insert({ user_id: data.session.user.id }).then();
+                    supabase.from("sessions").insert({ user_id: data.session.user.id })
+                      .then(({ error }) => { if (error) console.error("[DB] Session insert failed:", error.message); });
                   }
                 });
               }
