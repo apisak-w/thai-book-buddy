@@ -107,19 +107,19 @@ export default function BrowsePage() {
     async function loadUserData() {
       try {
         const supabase = getSupabase();
-        const [{ data: { session } }, { data: sels }, { data: books }] = await Promise.all([
+        const [{ data: { session } }, { data: sels }, { data: counts }] = await Promise.all([
           supabase.auth.getSession(),
           supabase.from("user_selections").select("publisher_id"),
-          supabase.from("user_books").select("publisher_id"),
+          supabase.rpc("get_my_book_counts"),
         ]);
         if (session?.user) setUserId(session.user.id);
         if (sels) setSelectedIds(new Set(sels.map((s: { publisher_id: string }) => s.publisher_id)));
-        if (books) {
-          const counts = new Map<string, number>();
-          for (const b of books as { publisher_id: string }[]) {
-            counts.set(b.publisher_id, (counts.get(b.publisher_id) ?? 0) + 1);
+        if (counts) {
+          const map = new Map<string, number>();
+          for (const c of counts as { publisher_id: string; count: number }[]) {
+            map.set(c.publisher_id, Number(c.count));
           }
-          setBookCounts(counts);
+          setBookCounts(map);
         }
       } catch {
         // Non-critical: list still works, user just won't see their selections

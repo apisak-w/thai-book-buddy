@@ -46,6 +46,7 @@ export default function MapPage() {
   const [loaded, setLoaded] = useState(false);
   const [activeBooth, setActiveBooth] = useState<string | null>(null);
   const [activeKey, setActiveKey] = useState(0);
+  const [initialScale, setInitialScale] = useState(0.15);
   const activeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -54,6 +55,21 @@ export default function MapPage() {
 
   useEffect(() => {
     return () => { if (activeTimer.current) clearTimeout(activeTimer.current); };
+  }, []);
+
+  // Compute initial scale so the map fills the container width
+  useEffect(() => {
+    const el = mapContainerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      if (width > 0 && height > 0) {
+        const fitScale = Math.min(width / IMAGE_W, height / IMAGE_H);
+        setInitialScale(fitScale);
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
   }, []);
 
   function handleFocusBooth(boothNum: string) {
@@ -147,9 +163,10 @@ export default function MapPage() {
       {/* Map */}
       <div ref={mapContainerRef} className="relative flex-1 overflow-hidden bg-[#e0dbd4]">
         <TransformWrapper
+          key={initialScale}
           ref={transformRef}
-          initialScale={0.15}
-          minScale={0.1}
+          initialScale={initialScale}
+          minScale={initialScale * 0.5}
           maxScale={4}
           centerOnInit
         >
