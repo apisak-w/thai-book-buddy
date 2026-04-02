@@ -171,12 +171,19 @@ export default function AdminPage() {
   async function openDetail(pub: PublisherStat) {
     setDetail({ id: pub.id, name_th: pub.name_th, saves: pub.saves, books_added: pub.books_added, demographics: [], books: [] });
     setDetailLoading(true);
-    const res = await fetch(`/api/admin/publisher/${pub.id}`, {
-      headers: { "x-admin-password": password },
-    });
-    const json = await res.json();
-    setDetail({ id: pub.id, saves: pub.saves, books_added: pub.books_added, ...json });
-    setDetailLoading(false);
+    try {
+      const res = await fetch(`/api/admin/publisher/${pub.id}`, {
+        headers: { "x-admin-password": password },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      setDetail({ id: pub.id, saves: pub.saves, books_added: pub.books_added, ...json });
+    } catch {
+      setDetail(null);
+      alert("โหลดข้อมูลสำนักพิมพ์ไม่สำเร็จ กรุณาลองใหม่");
+    } finally {
+      setDetailLoading(false);
+    }
   }
 
   const sorted = data

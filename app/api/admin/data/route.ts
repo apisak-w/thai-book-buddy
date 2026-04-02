@@ -9,9 +9,16 @@ function adminClient() {
   );
 }
 
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+let cachedResult: { data: unknown; timestamp: number } | null = null;
+
 export async function GET(req: NextRequest) {
   const denied = checkAdminAuth(req);
   if (denied) return denied;
+
+  if (cachedResult && Date.now() - cachedResult.timestamp < CACHE_TTL_MS) {
+    return NextResponse.json(cachedResult.data);
+  }
 
   const supabase = adminClient();
 
@@ -94,5 +101,6 @@ export async function GET(req: NextRequest) {
   }));
 
   const result = { publishers: publisherStats, dau, totals, demographics, top_books };
+  cachedResult = { data: result, timestamp: Date.now() };
   return NextResponse.json(result);
 }

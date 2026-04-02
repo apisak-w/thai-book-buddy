@@ -166,6 +166,7 @@ export default function BrowsePage() {
 
   const doRemoveOrAdd = useCallback(async (publisherId: string, isSelected: boolean) => {
     togglingRef.current.add(publisherId);
+    const prevSelectedIds = new Set(selectedIds);
     setSelectedIds((prev) => {
       const next = new Set(prev);
       isSelected ? next.delete(publisherId) : next.add(publisherId);
@@ -176,19 +177,29 @@ export default function BrowsePage() {
       setToast("เพิ่มในรายการแล้ว");
       toastTimer.current = setTimeout(() => setToast(null), 2500);
     }
-    const supabase = getSupabase();
-    if (isSelected) {
-      await Promise.all([
-        supabase.from("user_selections").delete()
-          .eq("user_id", userId!).eq("publisher_id", publisherId),
-        supabase.from("user_books").delete()
-          .eq("user_id", userId!).eq("publisher_id", publisherId),
-      ]);
-    } else {
-      await supabase.from("user_selections").insert({ user_id: userId!, publisher_id: publisherId });
+    try {
+      const supabase = getSupabase();
+      if (isSelected) {
+        const [selRes, bookRes] = await Promise.all([
+          supabase.from("user_selections").delete()
+            .eq("user_id", userId!).eq("publisher_id", publisherId),
+          supabase.from("user_books").delete()
+            .eq("user_id", userId!).eq("publisher_id", publisherId),
+        ]);
+        if (selRes.error || bookRes.error) throw new Error("delete failed");
+      } else {
+        const { error } = await supabase.from("user_selections").insert({ user_id: userId!, publisher_id: publisherId });
+        if (error) throw new Error("insert failed");
+      }
+    } catch {
+      setSelectedIds(prevSelectedIds);
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      setToast("เกิดข้อผิดพลาด กรุณาลองใหม่");
+      toastTimer.current = setTimeout(() => setToast(null), 3000);
+    } finally {
+      togglingRef.current.delete(publisherId);
     }
-    togglingRef.current.delete(publisherId);
-  }, [userId]); // toastTimer is a stable ref — intentionally not listed
+  }, [userId, selectedIds]); // toastTimer is a stable ref — intentionally not listed
 
   const handleToggle = useCallback(async (publisherId: string) => {
     if (!userId || togglingRef.current.has(publisherId)) return;
