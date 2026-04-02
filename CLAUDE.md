@@ -76,6 +76,8 @@ RLS: Public read for publishers/booths; users can only modify their own data.
 
 Before starting any new work (feature, bugfix, etc.), always create a new git worktree with a new branch. Never work directly on `main`.
 
+If this is a forked repo, when unsure about something (PR target, push destination, whether to pull upstream first, etc.), ask — don't assume.
+
 ## Conventions
 
 - **Timeouts**: All critical async ops use `withTimeout(promise, ms, msg)` helper (10-15s). LIFF init has a separate 10s `Promise.race`.
