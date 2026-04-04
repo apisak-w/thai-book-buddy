@@ -12,6 +12,7 @@ import ErrorScreen from "../../components/ErrorScreen";
 import SearchBar from "../../components/SearchBar";
 import PublisherListItem from "../../components/PublisherListItem";
 import type { Publisher, Book } from "../../types";
+import { env } from "@/utils/env";
 
 export default function MyListPage() {
   const { isLoggedIn, isLoading: authLoading } = useLIFF();
@@ -31,7 +32,7 @@ export default function MyListPage() {
   const toastRef = useRef<HTMLDivElement>(null);
   const [notesByPublisher, setNotesByPublisher] = useState<Map<string, string>>(new Map());
   const [showDonateBanner, setShowDonateBanner] = useState(
-    () => process.env.NEXT_PUBLIC_DONATE_BANNER_ENABLED === "true" &&
+    () => env.NEXT_PUBLIC_DONATE_BANNER_ENABLED === "true" &&
           typeof window !== "undefined" && !sessionStorage.getItem("donate_banner_dismissed")
   );
 
@@ -65,7 +66,7 @@ export default function MyListPage() {
     if (!isLoggedIn) return;
 
     // Dev bypass: use mock data to preview UI without a Supabase session
-    if (process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === "true") {
+    if (process.env.NODE_ENV === "development" && env.NEXT_PUBLIC_DEV_BYPASS_AUTH === "true") {
       setUserId("dev-user");
       setPublishers([
         { id: "p1", name_th: "สำนักพิมพ์แสงดาว", name_en: "Sangdao Publishing", booths: [{ zone: "A", booth_number: "A01" }] },
@@ -167,8 +168,8 @@ export default function MyListPage() {
 
   function removePublisher(publisherId: string) {
     if (!userId) return;
-    const idx = publishers.findIndex((p) => p.id === publisherId);
-    const removed = publishers[idx];
+    const removed = publishers.find((p) => p.id === publisherId);
+    if (!removed) return;
     const removedBooks = books.filter((b) => b.publisher_id === publisherId);
     const removedNote = notesByPublisher.get(publisherId);
     setPublishers((prev) => prev.filter((p) => p.id !== publisherId));
@@ -178,7 +179,7 @@ export default function MyListPage() {
       "ลบรายการสำเร็จ",
       () => {
         cancelPending();
-        setPublishers((prev) => { const next = [...prev]; next.splice(idx, 0, removed); return next; });
+        setPublishers((prev) => [...prev, removed].sort((a, b) => a.name_th.localeCompare(b.name_th, "th")));
         setBooks((prev) => [...prev, ...removedBooks]);
         if (removedNote) setNotesByPublisher((prev) => { const next = new Map(prev); next.set(publisherId, removedNote); return next; });
       },
@@ -193,14 +194,14 @@ export default function MyListPage() {
   }
 
   function deleteBook(bookId: string) {
-    const idx = books.findIndex((b) => b.id === bookId);
-    const removed = books[idx];
+    const removed = books.find((b) => b.id === bookId);
+    if (!removed) return;
     setBooks((prev) => prev.filter((b) => b.id !== bookId));
     showToast(
       "ลบหนังสือสำเร็จ",
       () => {
         cancelPending();
-        setBooks((prev) => { const next = [...prev]; next.splice(idx, 0, removed); return next; });
+        setBooks((prev) => [...prev, removed]);
       },
       async () => {
         const supabase = getSupabase();
@@ -212,13 +213,21 @@ export default function MyListPage() {
   async function togglePurchased(book: Book) {
     const updated = !book.is_purchased;
     setBooks((prev) => prev.map((b) => b.id === book.id ? { ...b, is_purchased: updated } : b));
-    if (updated) {
+    try {
+      const supabase = getSupabase();
+      const { error } = await supabase.from("user_books").update({ is_purchased: updated }).eq("id", book.id);
+      if (error) throw error;
+      if (updated) {
+        if (toastTimer.current) clearTimeout(toastTimer.current);
+        setToast({ message: "ซื้อหนังสือแล้ว 🎉", onUndo: null });
+        toastTimer.current = setTimeout(() => setToast(null), 2500);
+      }
+    } catch {
+      setBooks((prev) => prev.map((b) => b.id === book.id ? { ...b, is_purchased: !updated } : b));
       if (toastTimer.current) clearTimeout(toastTimer.current);
-      setToast({ message: "ซื้อหนังสือแล้ว 🎉", onUndo: null });
-      toastTimer.current = setTimeout(() => setToast(null), 2500);
+      setToast({ message: "เกิดข้อผิดพลาด กรุณาลองใหม่", onUndo: null });
+      toastTimer.current = setTimeout(() => setToast(null), 3000);
     }
-    const supabase = getSupabase();
-    await supabase.from("user_books").update({ is_purchased: updated }).eq("id", book.id);
   }
 
   async function handleBookEdited(bookId: string, title: string, price: number | null) {
@@ -234,7 +243,7 @@ export default function MyListPage() {
       else next.delete(publisherId);
       return next;
     });
-    if (process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH !== "true" && userId) {
+    if (!(process.env.NODE_ENV === "development" && env.NEXT_PUBLIC_DEV_BYPASS_AUTH === "true") && userId) {
       const supabase = getSupabase();
       await supabase.from("user_selections").update({ note }).eq("user_id", userId).eq("publisher_id", publisherId);
     }

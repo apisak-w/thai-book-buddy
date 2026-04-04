@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
 import { Bookmark, Check, HandHeart } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -13,6 +14,7 @@ import ErrorScreen from "../../components/ErrorScreen";
 import SearchBar from "../../components/SearchBar";
 import BookFairReminderModal from "../../components/BookFairReminderModal";
 import type { Publisher } from "../../types";
+import { env } from "@/utils/env";
 
 export default function BrowsePage() {
   const { isLoggedIn, isLoading: authLoading } = useLIFF();
@@ -27,6 +29,8 @@ export default function BrowsePage() {
   const [pubsError, setPubsError] = useState(false);
   const [pubsRetryKey, setPubsRetryKey] = useState(0);
   const [userLoaded, setUserLoaded] = useState(false);
+  const [userLoadError, setUserLoadError] = useState(false);
+  const [userRetryKey, setUserRetryKey] = useState(0);
   const [bookCounts, setBookCounts] = useState<Map<string, number>>(new Map());
   const [confirmPublisherId, setConfirmPublisherId] = useState<string | null>(null);
   const togglingRef = useRef<Set<string>>(new Set());
@@ -40,7 +44,7 @@ export default function BrowsePage() {
   }, []);
 
   const [showDonateBanner, setShowDonateBanner] = useState(
-    () => process.env.NEXT_PUBLIC_DONATE_BANNER_ENABLED === "true" &&
+    () => env.NEXT_PUBLIC_DONATE_BANNER_ENABLED === "true" &&
           typeof window !== "undefined" && !sessionStorage.getItem("donate_banner_dismissed")
   );
 
@@ -105,29 +109,32 @@ export default function BrowsePage() {
   useEffect(() => {
     if (isPreview || !isLoggedIn) return;
     async function loadUserData() {
+      setUserLoadError(false);
       try {
         const supabase = getSupabase();
-        const [{ data: { session } }, { data: sels }, { data: books }] = await Promise.all([
+        const [{ data: { session } }, { data: sels, error: selsError }, { data: counts, error: countsError }] = await Promise.all([
           supabase.auth.getSession(),
           supabase.from("user_selections").select("publisher_id"),
-          supabase.from("user_books").select("publisher_id"),
+          supabase.rpc("get_my_book_counts"),
         ]);
+        if (selsError) throw selsError;
+        if (countsError) throw countsError;
         if (session?.user) setUserId(session.user.id);
         if (sels) setSelectedIds(new Set(sels.map((s: { publisher_id: string }) => s.publisher_id)));
-        if (books) {
-          const counts = new Map<string, number>();
-          for (const b of books as { publisher_id: string }[]) {
-            counts.set(b.publisher_id, (counts.get(b.publisher_id) ?? 0) + 1);
+        if (counts) {
+          const map = new Map<string, number>();
+          for (const c of counts as { publisher_id: string; count: number }[]) {
+            map.set(c.publisher_id, Number(c.count));
           }
-          setBookCounts(counts);
+          setBookCounts(map);
         }
       } catch {
-        // Non-critical: list still works, user just won't see their selections
+        setUserLoadError(true);
       }
       setUserLoaded(true);
     }
     loadUserData();
-  }, [isLoggedIn]);
+  }, [isLoggedIn, userRetryKey]);
 
   const categories = useMemo(() => {
     const set = new Set(publishers.flatMap((p) => p.category ?? []));
@@ -166,6 +173,7 @@ export default function BrowsePage() {
 
   const doRemoveOrAdd = useCallback(async (publisherId: string, isSelected: boolean) => {
     togglingRef.current.add(publisherId);
+    const prevSelectedIds = new Set(selectedIds);
     setSelectedIds((prev) => {
       const next = new Set(prev);
       isSelected ? next.delete(publisherId) : next.add(publisherId);
@@ -176,19 +184,29 @@ export default function BrowsePage() {
       setToast("เพิ่มในรายการแล้ว");
       toastTimer.current = setTimeout(() => setToast(null), 2500);
     }
-    const supabase = getSupabase();
-    if (isSelected) {
-      await Promise.all([
-        supabase.from("user_selections").delete()
-          .eq("user_id", userId!).eq("publisher_id", publisherId),
-        supabase.from("user_books").delete()
-          .eq("user_id", userId!).eq("publisher_id", publisherId),
-      ]);
-    } else {
-      await supabase.from("user_selections").insert({ user_id: userId!, publisher_id: publisherId });
+    try {
+      const supabase = getSupabase();
+      if (isSelected) {
+        const [selRes, bookRes] = await Promise.all([
+          supabase.from("user_selections").delete()
+            .eq("user_id", userId!).eq("publisher_id", publisherId),
+          supabase.from("user_books").delete()
+            .eq("user_id", userId!).eq("publisher_id", publisherId),
+        ]);
+        if (selRes.error || bookRes.error) throw new Error("delete failed");
+      } else {
+        const { error } = await supabase.from("user_selections").insert({ user_id: userId!, publisher_id: publisherId });
+        if (error) throw new Error("insert failed");
+      }
+    } catch {
+      setSelectedIds(prevSelectedIds);
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      setToast("เกิดข้อผิดพลาด กรุณาลองใหม่");
+      toastTimer.current = setTimeout(() => setToast(null), 3000);
+    } finally {
+      togglingRef.current.delete(publisherId);
     }
-    togglingRef.current.delete(publisherId);
-  }, [userId]); // toastTimer is a stable ref — intentionally not listed
+  }, [userId, selectedIds]); // toastTimer is a stable ref — intentionally not listed
 
   const handleToggle = useCallback(async (publisherId: string) => {
     if (!userId || togglingRef.current.has(publisherId)) return;
@@ -220,12 +238,14 @@ export default function BrowsePage() {
           </div>
 
           {/* Category filter */}
-          <div className="flex gap-[8px] px-[16px] pb-[12px] overflow-x-auto no-scrollbar">
+          <div role="tablist" aria-label="กรองโซน" className="flex gap-[8px] px-[16px] pb-[12px] overflow-x-auto no-scrollbar">
             {categories.map((cat) => {
               const active = activeZone === cat;
               return (
                 <button
                   key={cat}
+                  role="tab"
+                  aria-selected={active}
                   onClick={() => setActiveZone(cat)}
                   className={`shrink-0 px-[12px] py-[4px] rounded-[20px] text-[14px] font-[family-name:var(--font-sarabun)] transition-all ${
                     active
@@ -238,6 +258,21 @@ export default function BrowsePage() {
               );
             })}
           </div>
+
+          {/* User data error banner */}
+          {userLoadError && (
+            <div className="mx-[16px] mb-[8px] flex items-center justify-between bg-[#fff0e0] border border-[#e2c9a6] rounded-[12px] px-[16px] py-[10px]">
+              <p className="font-[family-name:var(--font-sarabun)] text-[14px] text-[#973c00]">
+                ไม่สามารถโหลดข้อมูลได้
+              </p>
+              <button
+                onClick={() => setUserRetryKey((k) => k + 1)}
+                className="font-[family-name:var(--font-sarabun)] font-medium text-[14px] text-[#c4855a]"
+              >
+                ลองใหม่
+              </button>
+            </div>
+          )}
 
           {/* Count row */}
           <div className="flex items-center justify-between px-[16px] pb-[12px]">
@@ -322,42 +357,39 @@ export default function BrowsePage() {
         </div>
       )}
 
-      {confirmPublisherId && (() => {
-        const pub = publishers.find((p) => p.id === confirmPublisherId);
-        const count = bookCounts.get(confirmPublisherId) ?? 0;
-        return (
-          <div className="absolute inset-0 z-30 flex items-end justify-center bg-black/40" onClick={() => setConfirmPublisherId(null)}>
-            <div className="w-full bg-[#fafaf8] rounded-t-[24px] p-[24px] flex flex-col gap-[16px]" onClick={(e) => e.stopPropagation()}>
-              <div className="flex flex-col gap-[8px]">
-                <p className="font-[family-name:var(--font-sarabun)] font-semibold text-[18px] text-[#3d2b1a]">
-                  ลบสำนักพิมพ์นี้?
-                </p>
-                <p className="font-[family-name:var(--font-sarabun)] font-light text-[14px] text-[#6a7282]">
-                  {pub?.name_th} มีหนังสือในรายการ {count} เล่ม หากลบสำนักพิมพ์นี้ หนังสือทั้งหมดจะถูกลบออกด้วย
-                </p>
-              </div>
-              <div className="flex gap-[8px]">
-                <button
-                  onClick={async () => {
-                    const id = confirmPublisherId;
-                    setConfirmPublisherId(null);
-                    await doRemoveOrAdd(id, true);
-                  }}
-                  className="flex-1 h-[48px] rounded-[12px] bg-[#c4855a] font-[family-name:var(--font-sarabun)] text-[16px] text-white"
-                >
-                  ลบออก
-                </button>
-                <button
-                  onClick={() => setConfirmPublisherId(null)}
-                  className="flex-1 h-[48px] rounded-[12px] border border-[#e2c9a6] bg-[#fafaf8] font-[family-name:var(--font-sarabun)] text-[16px] text-[#c4855a]"
-                >
-                  ยกเลิก
-                </button>
-              </div>
+      <Dialog open={!!confirmPublisherId} onClose={() => setConfirmPublisherId(null)} className="relative z-30">
+        <DialogBackdrop className="fixed inset-0 bg-black/40" />
+        <div className="fixed inset-0 flex items-end justify-center">
+          <DialogPanel className="w-full bg-[#fafaf8] rounded-t-[24px] p-[24px] flex flex-col gap-[16px]">
+            <div className="flex flex-col gap-[8px]">
+              <DialogTitle className="font-[family-name:var(--font-sarabun)] font-semibold text-[18px] text-[#3d2b1a]">
+                ลบสำนักพิมพ์นี้?
+              </DialogTitle>
+              <p className="font-[family-name:var(--font-sarabun)] font-light text-[14px] text-[#6a7282]">
+                {publishers.find((p) => p.id === confirmPublisherId)?.name_th} มีหนังสือในรายการ {bookCounts.get(confirmPublisherId!) ?? 0} เล่ม หากลบสำนักพิมพ์นี้ หนังสือทั้งหมดจะถูกลบออกด้วย
+              </p>
             </div>
-          </div>
-        );
-      })()}
+            <div className="flex gap-[8px]">
+              <button
+                onClick={async () => {
+                  const id = confirmPublisherId!;
+                  setConfirmPublisherId(null);
+                  await doRemoveOrAdd(id, true);
+                }}
+                className="flex-1 h-[48px] rounded-[12px] bg-[#c4855a] font-[family-name:var(--font-sarabun)] text-[16px] text-white"
+              >
+                ลบออก
+              </button>
+              <button
+                onClick={() => setConfirmPublisherId(null)}
+                className="flex-1 h-[48px] rounded-[12px] border border-[#e2c9a6] bg-[#fafaf8] font-[family-name:var(--font-sarabun)] text-[16px] text-[#c4855a]"
+              >
+                ยกเลิก
+              </button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
 
       <BottomNav />
       <BookFairReminderModal isOpen={showReminder} onClose={() => setShowReminder(false)} />

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { Literata, Plus_Jakarta_Sans, Sarabun } from "next/font/google";
 import "./globals.css";
 import { LIFFProvider } from "../providers/liff-providers";
@@ -20,15 +21,17 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nonce = (await headers()).get("x-nonce") ?? "";
+
   return (
     <html lang="en">
-      <body className={`${literata.variable} ${jakarta.variable} ${sarabun.variable}`}>
-        <LIFFProvider>{children}</LIFFProvider>
+      <body className={`${literata.variable} ${jakarta.variable} ${sarabun.variable}`} nonce={nonce}>
+        <LIFFProvider><main>{children}</main></LIFFProvider>
       </body>
     </html>
   );

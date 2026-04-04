@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { env } from "@/utils/env";
 
 // Force dynamic so Next.js doesn't try to pre-render this at build time
 export const dynamic = "force-dynamic";
@@ -14,8 +15,8 @@ export async function GET() {
   }
 
   const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
 
   const { data, error } = await supabase

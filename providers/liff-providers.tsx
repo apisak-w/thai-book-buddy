@@ -3,6 +3,7 @@
 import { Liff } from "@line/liff";
 import { createContext, useContext, useEffect, useState } from "react";
 import { getSupabase } from "../utils/supabase";
+import { env } from "../utils/env";
 
 interface LIFFContextValue {
   liff: Liff | null;
@@ -57,12 +58,14 @@ async function signInWithLINE(
     const needsOnboarding = !profile?.age || !profile?.gender;
     if (needsOnboarding) {
       localStorage.removeItem(ONBOARDING_KEY);
-      // Re-create profile row if it was deleted
-      const meta = session.user.user_metadata ?? {};
-      supabase.from("profiles").upsert(
-        { id: session.user.id, display_name: meta.display_name ?? null },
-        { onConflict: "id", ignoreDuplicates: false }
-      ).then();
+      // Re-create profile row only if it was deleted (profile fetch returned null)
+      if (!profile) {
+        const meta = session.user.user_metadata ?? {};
+        supabase.from("profiles").upsert(
+          { id: session.user.id, display_name: meta.display_name ?? null },
+          { onConflict: "id", ignoreDuplicates: true }
+        ).then(({ error }) => { if (error) console.error("[DB] Profile re-create failed:", error.message); });
+      }
     } else {
       localStorage.setItem(ONBOARDING_KEY, "true");
     }
@@ -87,12 +90,12 @@ async function signInWithLINE(
   let res: Response;
   try {
     res = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/auth-line`,
+      `${env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/auth-line`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          Authorization: `Bearer ${env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({ accessToken }),
         signal: controller.signal,
@@ -131,15 +134,16 @@ async function signInWithLINE(
     };
   }
 
-  // Step 3: Upsert profile + optionally check onboarding — run in parallel
+  // Step 3: Upsert profile (ignoreDuplicates: true so existing profiles aren't overwritten)
+  // + optionally check onboarding — run in parallel
   const upsertPromise = supabase.from("profiles").upsert(
     { id: data.user.id, display_name },
-    { onConflict: "id", ignoreDuplicates: false }
+    { onConflict: "id", ignoreDuplicates: true }
   );
 
   if (onboardingCached) {
     // Don't wait for profile check — fire upsert and return immediately
-    upsertPromise.then();
+    upsertPromise.then(({ error }) => { if (error) console.error("[DB] Profile upsert failed:", error.message); });
     return { error: null, needsOnboarding: false };
   }
 
@@ -168,7 +172,7 @@ function LIFFProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Dev bypass: skip LIFF entirely, force logged-in state
-    if (process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === "true") {
+    if (process.env.NODE_ENV === "development" && env.NEXT_PUBLIC_DEV_BYPASS_AUTH === "true") {
       setIsLoggedIn(true);
       setIsLoading(false);
       return;
@@ -189,7 +193,7 @@ function LIFFProvider({ children }: { children: React.ReactNode }) {
             10_000
           )
         );
-        Promise.race([liff.init({ liffId: process.env.NEXT_PUBLIC_LIFF_ID! }), initTimeout])
+        Promise.race([liff.init({ liffId: env.NEXT_PUBLIC_LIFF_ID }), initTimeout])
           .then(async () => {
             setLiffObject(liff);
             setIsLoggedIn(liff.isLoggedIn());
@@ -202,12 +206,19 @@ function LIFFProvider({ children }: { children: React.ReactNode }) {
                 liff.logout();
                 setIsLoggedIn(false);
               } else {
-                // Record session for DAU tracking (fire and forget)
+                // Record session for DAU tracking (once per day per user)
                 const supabase = getSupabase();
                 supabase.auth.getSession().then(({ data }) => {
-                  if (data?.session?.user) {
-                    supabase.from("sessions").insert({ user_id: data.session.user.id }).then();
-                  }
+                  if (!data?.session?.user) return;
+                  const uid = data.session.user.id;
+                  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+                  const sessionKey = `session_recorded_${today}`;
+                  if (localStorage.getItem(sessionKey)) return; // already recorded today
+                  supabase.from("sessions").insert({ user_id: uid })
+                    .then(({ error }) => {
+                      if (!error) localStorage.setItem(sessionKey, "1");
+                      else console.error("[DB] Session insert failed:", error.message);
+                    });
                 });
               }
               setNeedsOnboarding(needsOnboarding);

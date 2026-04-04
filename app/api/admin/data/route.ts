@@ -1,16 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { checkAdminAuth } from "../rate-limit";
+import { env } from "@/utils/env";
 
 function adminClient() {
   return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.SUPABASE_SERVICE_ROLE_KEY
   );
 }
 
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+let cachedResult: { data: unknown; timestamp: number } | null = null;
+
 export async function GET(req: NextRequest) {
-  if (req.headers.get("x-admin-password") !== process.env.ADMIN_PASSWORD) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const denied = checkAdminAuth(req);
+  if (denied) return denied;
+
+  if (cachedResult && Date.now() - cachedResult.timestamp < CACHE_TTL_MS) {
+    return NextResponse.json(cachedResult.data);
   }
 
   const supabase = adminClient();
@@ -94,5 +102,6 @@ export async function GET(req: NextRequest) {
   }));
 
   const result = { publishers: publisherStats, dau, totals, demographics, top_books };
+  cachedResult = { data: result, timestamp: Date.now() };
   return NextResponse.json(result);
 }
