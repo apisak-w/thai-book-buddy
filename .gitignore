@@ -36,6 +36,9 @@ yarn-error.log*
 # worktrees
 .worktrees/
 
+# superpowers planning artifacts
+docs/superpowers/
+
 # vercel
 .vercel
 
