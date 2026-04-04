@@ -104,21 +104,29 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
               border: "4px solid #c4d8b6",
             }}
           >
-            <div style={{ fontSize: 44, color: "#9c7a5b" }}>
-              ซื้อหนังสือมากกว่า
-            </div>
-            <div
-              style={{
-                fontSize: 112,
-                fontWeight: 800,
-                color: "#973c00",
-              }}
-            >
-              {percentile}%
-            </div>
-            <div style={{ fontSize: 44, color: "#9c7a5b" }}>
-              ของผู้ใช้ทั้งหมด
-            </div>
+            {percentile > 0 ? (
+              <>
+                <div style={{ fontSize: 44, color: "#9c7a5b" }}>
+                  ซื้อหนังสือมากกว่า
+                </div>
+                <div
+                  style={{
+                    fontSize: 112,
+                    fontWeight: 800,
+                    color: "#973c00",
+                  }}
+                >
+                  {percentile}%
+                </div>
+                <div style={{ fontSize: 44, color: "#9c7a5b" }}>
+                  ของผู้ใช้ทั้งหมด
+                </div>
+              </>
+            ) : (
+              <div style={{ fontSize: 44, color: "#9c7a5b", lineHeight: 1.6 }}>
+                คุณเป็นนักอ่านกลุ่มแรกที่ใช้งาน! 🎉
+              </div>
+            )}
           </div>
 
           {/* Secondary stats */}
