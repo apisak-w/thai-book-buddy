@@ -167,8 +167,8 @@ export default function MyListPage() {
 
   function removePublisher(publisherId: string) {
     if (!userId) return;
-    const idx = publishers.findIndex((p) => p.id === publisherId);
-    const removed = publishers[idx];
+    const removed = publishers.find((p) => p.id === publisherId);
+    if (!removed) return;
     const removedBooks = books.filter((b) => b.publisher_id === publisherId);
     const removedNote = notesByPublisher.get(publisherId);
     setPublishers((prev) => prev.filter((p) => p.id !== publisherId));
@@ -178,7 +178,7 @@ export default function MyListPage() {
       "ลบรายการสำเร็จ",
       () => {
         cancelPending();
-        setPublishers((prev) => { const next = [...prev]; next.splice(idx, 0, removed); return next; });
+        setPublishers((prev) => [...prev, removed].sort((a, b) => a.name_th.localeCompare(b.name_th, "th")));
         setBooks((prev) => [...prev, ...removedBooks]);
         if (removedNote) setNotesByPublisher((prev) => { const next = new Map(prev); next.set(publisherId, removedNote); return next; });
       },
@@ -193,14 +193,14 @@ export default function MyListPage() {
   }
 
   function deleteBook(bookId: string) {
-    const idx = books.findIndex((b) => b.id === bookId);
-    const removed = books[idx];
+    const removed = books.find((b) => b.id === bookId);
+    if (!removed) return;
     setBooks((prev) => prev.filter((b) => b.id !== bookId));
     showToast(
       "ลบหนังสือสำเร็จ",
       () => {
         cancelPending();
-        setBooks((prev) => { const next = [...prev]; next.splice(idx, 0, removed); return next; });
+        setBooks((prev) => [...prev, removed]);
       },
       async () => {
         const supabase = getSupabase();
