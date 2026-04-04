@@ -32,7 +32,7 @@ export default memo(function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="shrink-0 border-t border-[#f0e4d4] bg-[#fafaf8]">
+    <nav aria-label="เมนูหลัก" className="shrink-0 border-t border-[#f0e4d4] bg-[#fafaf8]">
       <div className="flex pt-[8px] px-[24px] justify-between" style={{ paddingBottom: "calc(12px + var(--sab))" }}>
         {tabs.map((tab) => {
           const active = pathname === tab.href;
@@ -40,6 +40,7 @@ export default memo(function BottomNav() {
             <Link
               key={tab.href}
               href={tab.href}
+              aria-current={active ? "page" : undefined}
               className="flex flex-col items-center gap-[8px] w-[80px]"
             >
               {tab.icon(active)}
