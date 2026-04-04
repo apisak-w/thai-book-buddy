@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Trash2, HandHeart } from "lucide-react";
+import { Trash2, HandHeart, Share2 } from "lucide-react";
+import ShareCard from "../../components/ShareCard";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getSupabase } from "../../utils/supabase";
@@ -35,6 +36,9 @@ export default function MyListPage() {
     () => env.NEXT_PUBLIC_DONATE_BANNER_ENABLED === "true" &&
           typeof window !== "undefined" && !sessionStorage.getItem("donate_banner_dismissed")
   );
+  const [shareStats, setShareStats] = useState<{ purchasedCount: number; percentile: number; totalSpent: number; boothCount: number } | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const shareCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     return () => {
@@ -249,6 +253,47 @@ export default function MyListPage() {
     }
   }
 
+  const purchasedCount = useMemo(() => books.filter((b) => b.is_purchased).length, [books]);
+
+  async function handleShare() {
+    if (sharing) return;
+    setSharing(true);
+    try {
+      const supabase = getSupabase();
+      const { data, error } = await supabase.rpc("get_share_stats");
+      if (error || !data || data.length === 0) throw new Error("Failed to load stats");
+      const stats = data[0] as { purchased_count: number; percentile: number; total_spent: number; booth_count: number };
+      setShareStats({
+        purchasedCount: Number(stats.purchased_count),
+        percentile: Number(stats.percentile),
+        totalSpent: Number(stats.total_spent),
+        boothCount: Number(stats.booth_count),
+      });
+      // Wait for React to render the ShareCard
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const html2canvas = (await import("html2canvas")).default;
+      if (!shareCardRef.current) throw new Error("Card not rendered");
+      const canvas = await html2canvas(shareCardRef.current, {
+        scale: 1,
+        useCORS: true,
+        backgroundColor: "#fafaf8",
+        width: 1080,
+        height: 1920,
+      });
+      const link = document.createElement("a");
+      link.download = "bookfair-buddy-stats.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      setToast({ message: "ไม่สามารถสร้างรูปได้ กรุณาลองใหม่", onUndo: null });
+      toastTimer.current = setTimeout(() => setToast(null), 3000);
+    } finally {
+      setSharing(false);
+      setShareStats(null);
+    }
+  }
+
   if (authLoading || loading) return <LoadingScreen />;
   if (loadError) return <ErrorScreen onRetry={() => { setLoadError(false); setLoading(true); setRetryKey((k) => k + 1); }} />;
 
@@ -290,6 +335,18 @@ export default function MyListPage() {
               </div>
             </div>
           </div>
+          {purchasedCount > 0 && (
+            <button
+              onClick={handleShare}
+              disabled={sharing}
+              className="flex items-center justify-center gap-[8px] h-[48px] w-full rounded-[16px] border border-[#e2c9a6] bg-[#fff8ee] active:scale-95 transition-all disabled:opacity-50"
+            >
+              <Share2 size={18} color="#c4855a" strokeWidth={2} />
+              <span className="font-[family-name:var(--font-sarabun)] font-medium text-[16px] text-[#c4855a]">
+                {sharing ? "กำลังสร้างรูป..." : "แชร์สถิติของฉัน"}
+              </span>
+            </button>
+          )}
         </div>
 
         {/* Sticky search + count row */}
@@ -390,6 +447,15 @@ export default function MyListPage() {
             )}
           </div>
         </div>
+      )}
+      {shareStats && (
+        <ShareCard
+          ref={shareCardRef}
+          purchasedCount={shareStats.purchasedCount}
+          percentile={shareStats.percentile}
+          totalSpent={shareStats.totalSpent}
+          boothCount={shareStats.boothCount}
+        />
       )}
       <BottomNav />
     </div>
