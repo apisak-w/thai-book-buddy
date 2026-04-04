@@ -13,6 +13,7 @@ import ErrorScreen from "../../components/ErrorScreen";
 import SearchBar from "../../components/SearchBar";
 import BookFairReminderModal from "../../components/BookFairReminderModal";
 import type { Publisher } from "../../types";
+import { env } from "@/utils/env";
 
 export default function BrowsePage() {
   const { isLoggedIn, isLoading: authLoading } = useLIFF();
@@ -42,7 +43,7 @@ export default function BrowsePage() {
   }, []);
 
   const [showDonateBanner, setShowDonateBanner] = useState(
-    () => process.env.NEXT_PUBLIC_DONATE_BANNER_ENABLED === "true" &&
+    () => env.NEXT_PUBLIC_DONATE_BANNER_ENABLED === "true" &&
           typeof window !== "undefined" && !sessionStorage.getItem("donate_banner_dismissed")
   );
 
