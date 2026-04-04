@@ -76,7 +76,7 @@ RLS: Public read for publishers/booths; users can only modify their own data.
 
 Before starting any new work (feature, bugfix, etc.), always create a new git worktree with a new branch. Never work directly on `main`.
 
-This is a forked repo. PRs target `upstream/main`. Always `git fetch upstream main` and rebase on `upstream/main` before pushing a PR branch. When unsure about something (PR target, push destination, etc.), ask — don't assume.
+If this is a forked repo, PRs target `upstream/main`. Always `git fetch upstream main` and rebase on `upstream/main` before pushing a PR branch. When unsure about something (PR target, push destination, etc.), ask — don't assume.
 
 When creating a PR, if the work is associated with GitHub issues, ask the user if they want to link the related issues in the PR body using `Closes #N` keywords.
 
