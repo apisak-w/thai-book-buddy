@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Trash2, HandHeart, Share2 } from "lucide-react";
 import ShareCard from "../../components/ShareCard";
+import ShareCardModal from "../../components/ShareCardModal";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getSupabase } from "../../utils/supabase";
@@ -38,6 +39,7 @@ export default function MyListPage() {
   );
   const [shareStats, setShareStats] = useState<{ purchasedCount: number; percentile: number; totalSpent: number; boothCount: number } | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const shareCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -257,6 +259,10 @@ export default function MyListPage() {
 
   async function handleShare() {
     if (sharing) return;
+    if (purchasedCount === 0) {
+      setShareModalOpen(true);
+      return;
+    }
     setSharing(true);
     try {
       const supabase = getSupabase();
@@ -269,28 +275,13 @@ export default function MyListPage() {
         totalSpent: Number(stats.total_spent),
         boothCount: Number(stats.booth_count),
       });
-      // Wait for React to render the ShareCard
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      const html2canvas = (await import("html2canvas")).default;
-      if (!shareCardRef.current) throw new Error("Card not rendered");
-      const canvas = await html2canvas(shareCardRef.current, {
-        scale: 1,
-        useCORS: true,
-        backgroundColor: "#fafaf8",
-        width: 1080,
-        height: 1920,
-      });
-      const link = document.createElement("a");
-      link.download = "bookfair-buddy-stats.png";
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      setShareModalOpen(true);
     } catch {
       if (toastTimer.current) clearTimeout(toastTimer.current);
-      setToast({ message: "ไม่สามารถสร้างรูปได้ กรุณาลองใหม่", onUndo: null });
+      setToast({ message: "ไม่สามารถโหลดสถิติ กรุณาลองใหม่", onUndo: null });
       toastTimer.current = setTimeout(() => setToast(null), 3000);
     } finally {
       setSharing(false);
-      setShareStats(null);
     }
   }
 
@@ -309,18 +300,16 @@ export default function MyListPage() {
               <p className="font-[family-name:var(--font-sarabun)] font-semibold text-[32px] text-[#3d2b1a] leading-tight">
                 รายการของฉัน
               </p>
-              {purchasedCount > 0 && (
-                <button
-                  onClick={handleShare}
-                  disabled={sharing}
-                  className="flex items-center gap-[6px] px-[12px] h-[36px] rounded-[12px] border border-[#e2c9a6] bg-[#fff8ee] active:scale-95 transition-all disabled:opacity-50"
-                >
-                  <Share2 size={16} color="#c4855a" strokeWidth={2} />
-                  <span className="font-[family-name:var(--font-sarabun)] font-medium text-[14px] text-[#c4855a]">
-                    {sharing ? "กำลังสร้าง..." : "แชร์"}
-                  </span>
-                </button>
-              )}
+              <button
+                onClick={handleShare}
+                disabled={sharing}
+                className="flex items-center gap-[6px] px-[12px] h-[36px] rounded-[12px] border border-[#e2c9a6] bg-[#fff8ee] active:scale-95 transition-all disabled:opacity-50"
+              >
+                <Share2 size={16} color="#c4855a" strokeWidth={2} />
+                <span className="font-[family-name:var(--font-sarabun)] font-medium text-[14px] text-[#c4855a]">
+                  {sharing ? "กำลังสร้าง..." : "แชร์"}
+                </span>
+              </button>
             </div>
           </div>
 
@@ -459,6 +448,12 @@ export default function MyListPage() {
           boothCount={shareStats.boothCount}
         />
       )}
+      <ShareCardModal
+        isOpen={shareModalOpen}
+        stats={shareStats}
+        offscreenRef={shareCardRef}
+        onClose={() => { setShareModalOpen(false); setShareStats(null); }}
+      />
       <BottomNav />
     </div>
   );

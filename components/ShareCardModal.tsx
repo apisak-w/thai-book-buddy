@@ -53,8 +53,6 @@ export default function ShareCardModal({ isOpen, stats, offscreenRef, onClose }:
     }
   }
 
-  if (!stats) return null;
-
   return (
     <Dialog open={isOpen} onClose={onClose} className="relative z-40">
       <DialogBackdrop className="fixed inset-0 bg-black/80" />
@@ -67,30 +65,45 @@ export default function ShareCardModal({ isOpen, stats, offscreenRef, onClose }:
         </div>
 
         <DialogPanel className="flex flex-col items-center gap-[16px] w-full">
-          {/* Scaled card preview */}
-          <div
-            style={{ width: containerW, height: containerH, overflow: "hidden", borderRadius: 16, flexShrink: 0 }}
-          >
-            <div style={{ transform: `scale(${scale})`, transformOrigin: "top left", width: 1080, height: 1920 }}>
-              <ShareCard {...stats} offscreen={false} />
+          {stats ? (
+            <>
+              {/* Scaled card preview */}
+              <div
+                style={{ width: containerW, height: containerH, overflow: "hidden", borderRadius: 16, flexShrink: 0 }}
+              >
+                <div style={{ transform: `scale(${scale})`, transformOrigin: "top left", width: 1080, height: 1920 }}>
+                  <ShareCard {...stats} offscreen={false} />
+                </div>
+              </div>
+
+              {/* Download button */}
+              <button
+                onClick={handleDownload}
+                disabled={downloading}
+                className="flex items-center justify-center gap-[8px] h-[52px] w-full rounded-[16px] bg-[#c4855a] shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] active:scale-95 transition-all disabled:opacity-50"
+              >
+                <Download size={18} color="#fafaf8" strokeWidth={2} />
+                <span className="font-[family-name:var(--font-sarabun)] font-medium text-[18px] text-[#fafaf8]">
+                  {downloading ? "กำลังบันทึก..." : "บันทึกรูป"}
+                </span>
+              </button>
+
+              <p className="font-[family-name:var(--font-sarabun)] text-[13px] text-white/50 text-center">
+                หรือ screenshot หน้าจอนี้ได้เลย
+              </p>
+            </>
+          ) : (
+            /* Empty state */
+            <div className="flex flex-col items-center gap-[16px] bg-[#fafaf8] rounded-[24px] px-[32px] py-[48px] w-full text-center">
+              <span style={{ fontSize: 56 }}>📚</span>
+              <p className="font-[family-name:var(--font-sarabun)] font-semibold text-[20px] text-[#3d2b1a]">
+                ยังไม่มีสถิติให้แชร์
+              </p>
+              <p className="font-[family-name:var(--font-sarabun)] text-[15px] text-[#9c7a5b] leading-relaxed">
+                ลองติ๊กถูกหนังสือที่ซื้อแล้ว แล้วกลับมาแชร์สถิติอีกทีนะ
+              </p>
             </div>
-          </div>
-
-          {/* Download button */}
-          <button
-            onClick={handleDownload}
-            disabled={downloading}
-            className="flex items-center justify-center gap-[8px] h-[52px] w-full rounded-[16px] bg-[#c4855a] shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] active:scale-95 transition-all disabled:opacity-50"
-          >
-            <Download size={18} color="#fafaf8" strokeWidth={2} />
-            <span className="font-[family-name:var(--font-sarabun)] font-medium text-[18px] text-[#fafaf8]">
-              {downloading ? "กำลังบันทึก..." : "บันทึกรูป"}
-            </span>
-          </button>
-
-          <p className="font-[family-name:var(--font-sarabun)] text-[13px] text-white/50 text-center">
-            หรือ screenshot หน้าจอนี้ได้เลย
-          </p>
+          )}
         </DialogPanel>
       </div>
     </Dialog>
