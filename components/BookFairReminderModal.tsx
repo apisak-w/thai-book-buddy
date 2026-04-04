@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Dialog, DialogBackdrop, DialogPanel } from "@headlessui/react";
+import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
 import { X } from "lucide-react";
 
 const DISMISSED_KEY = "bookfair_reminder_dismissed";
@@ -40,9 +40,9 @@ export default function BookFairReminderModal({ isOpen, onClose }: Props) {
 
           {/* Text */}
           <div className="flex flex-col gap-[16px] text-center text-[#3d2b1a] w-full">
-            <p className="font-[family-name:var(--font-sarabun)] font-semibold text-[24px] leading-tight">
+            <DialogTitle className="font-[family-name:var(--font-sarabun)] font-semibold text-[24px] leading-tight">
               อย่าลืม screenshot หน้าแผนที่ก่อนไปงานนะ
-            </p>
+            </DialogTitle>
             <p className="font-[family-name:var(--font-sarabun)] font-normal text-[16px] leading-normal whitespace-pre-line">
               {`เนื่องจากในวันงานอาจมีคนใช้งานเยอะแล้วระบบเราไม่สามารถรองรับจำนวนคนได้ น้อง BB เลยอยากแนะนำให้ screenshot หน้าจอเก็บไว้ด้วยนะครับ จะได้หาบูธที่อยากไปเจอ\n\nเที่ยวงานหนังสือให้สนุกนะคร้าบบบ 🤎`}
             </p>
