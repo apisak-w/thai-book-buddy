@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { env } from "@/utils/env";
 
 const MAX_ATTEMPTS = 5;
 const WINDOW_MS = 5 * 60 * 1000; // 5 minutes
@@ -48,7 +49,7 @@ export function checkAdminAuth(req: NextRequest): NextResponse | null {
   }
 
   // Check password
-  if (req.headers.get("x-admin-password") !== process.env.ADMIN_PASSWORD) {
+  if (req.headers.get("x-admin-password") !== env.ADMIN_PASSWORD) {
     const existing = failedAttempts.get(ip);
     if (existing) {
       existing.count++;

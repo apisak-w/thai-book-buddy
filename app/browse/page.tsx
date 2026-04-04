@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
 import { Bookmark, Check, HandHeart } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -13,6 +14,7 @@ import ErrorScreen from "../../components/ErrorScreen";
 import SearchBar from "../../components/SearchBar";
 import BookFairReminderModal from "../../components/BookFairReminderModal";
 import type { Publisher } from "../../types";
+import { env } from "@/utils/env";
 
 export default function BrowsePage() {
   const { isLoggedIn, isLoading: authLoading } = useLIFF();
@@ -42,7 +44,7 @@ export default function BrowsePage() {
   }, []);
 
   const [showDonateBanner, setShowDonateBanner] = useState(
-    () => process.env.NEXT_PUBLIC_DONATE_BANNER_ENABLED === "true" &&
+    () => env.NEXT_PUBLIC_DONATE_BANNER_ENABLED === "true" &&
           typeof window !== "undefined" && !sessionStorage.getItem("donate_banner_dismissed")
   );
 
@@ -236,12 +238,14 @@ export default function BrowsePage() {
           </div>
 
           {/* Category filter */}
-          <div className="flex gap-[8px] px-[16px] pb-[12px] overflow-x-auto no-scrollbar">
+          <div role="tablist" aria-label="กรองโซน" className="flex gap-[8px] px-[16px] pb-[12px] overflow-x-auto no-scrollbar">
             {categories.map((cat) => {
               const active = activeZone === cat;
               return (
                 <button
                   key={cat}
+                  role="tab"
+                  aria-selected={active}
                   onClick={() => setActiveZone(cat)}
                   className={`shrink-0 px-[12px] py-[4px] rounded-[20px] text-[14px] font-[family-name:var(--font-sarabun)] transition-all ${
                     active
@@ -353,42 +357,39 @@ export default function BrowsePage() {
         </div>
       )}
 
-      {confirmPublisherId && (() => {
-        const pub = publishers.find((p) => p.id === confirmPublisherId);
-        const count = bookCounts.get(confirmPublisherId) ?? 0;
-        return (
-          <div className="absolute inset-0 z-30 flex items-end justify-center bg-black/40" onClick={() => setConfirmPublisherId(null)}>
-            <div className="w-full bg-[#fafaf8] rounded-t-[24px] p-[24px] flex flex-col gap-[16px]" onClick={(e) => e.stopPropagation()}>
-              <div className="flex flex-col gap-[8px]">
-                <p className="font-[family-name:var(--font-sarabun)] font-semibold text-[18px] text-[#3d2b1a]">
-                  ลบสำนักพิมพ์นี้?
-                </p>
-                <p className="font-[family-name:var(--font-sarabun)] font-light text-[14px] text-[#6a7282]">
-                  {pub?.name_th} มีหนังสือในรายการ {count} เล่ม หากลบสำนักพิมพ์นี้ หนังสือทั้งหมดจะถูกลบออกด้วย
-                </p>
-              </div>
-              <div className="flex gap-[8px]">
-                <button
-                  onClick={async () => {
-                    const id = confirmPublisherId;
-                    setConfirmPublisherId(null);
-                    await doRemoveOrAdd(id, true);
-                  }}
-                  className="flex-1 h-[48px] rounded-[12px] bg-[#c4855a] font-[family-name:var(--font-sarabun)] text-[16px] text-white"
-                >
-                  ลบออก
-                </button>
-                <button
-                  onClick={() => setConfirmPublisherId(null)}
-                  className="flex-1 h-[48px] rounded-[12px] border border-[#e2c9a6] bg-[#fafaf8] font-[family-name:var(--font-sarabun)] text-[16px] text-[#c4855a]"
-                >
-                  ยกเลิก
-                </button>
-              </div>
+      <Dialog open={!!confirmPublisherId} onClose={() => setConfirmPublisherId(null)} className="relative z-30">
+        <DialogBackdrop className="fixed inset-0 bg-black/40" />
+        <div className="fixed inset-0 flex items-end justify-center">
+          <DialogPanel className="w-full bg-[#fafaf8] rounded-t-[24px] p-[24px] flex flex-col gap-[16px]">
+            <div className="flex flex-col gap-[8px]">
+              <DialogTitle className="font-[family-name:var(--font-sarabun)] font-semibold text-[18px] text-[#3d2b1a]">
+                ลบสำนักพิมพ์นี้?
+              </DialogTitle>
+              <p className="font-[family-name:var(--font-sarabun)] font-light text-[14px] text-[#6a7282]">
+                {publishers.find((p) => p.id === confirmPublisherId)?.name_th} มีหนังสือในรายการ {bookCounts.get(confirmPublisherId!) ?? 0} เล่ม หากลบสำนักพิมพ์นี้ หนังสือทั้งหมดจะถูกลบออกด้วย
+              </p>
             </div>
-          </div>
-        );
-      })()}
+            <div className="flex gap-[8px]">
+              <button
+                onClick={async () => {
+                  const id = confirmPublisherId!;
+                  setConfirmPublisherId(null);
+                  await doRemoveOrAdd(id, true);
+                }}
+                className="flex-1 h-[48px] rounded-[12px] bg-[#c4855a] font-[family-name:var(--font-sarabun)] text-[16px] text-white"
+              >
+                ลบออก
+              </button>
+              <button
+                onClick={() => setConfirmPublisherId(null)}
+                className="flex-1 h-[48px] rounded-[12px] border border-[#e2c9a6] bg-[#fafaf8] font-[family-name:var(--font-sarabun)] text-[16px] text-[#c4855a]"
+              >
+                ยกเลิก
+              </button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
 
       <BottomNav />
       <BookFairReminderModal isOpen={showReminder} onClose={() => setShowReminder(false)} />

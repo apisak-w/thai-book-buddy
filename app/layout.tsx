@@ -31,7 +31,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${literata.variable} ${jakarta.variable} ${sarabun.variable}`} nonce={nonce}>
-        <LIFFProvider>{children}</LIFFProvider>
+        <LIFFProvider><main>{children}</main></LIFFProvider>
       </body>
     </html>
   );
