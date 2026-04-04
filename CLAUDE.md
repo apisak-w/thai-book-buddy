@@ -78,6 +78,8 @@ Before starting any new work (feature, bugfix, etc.), always create a new git wo
 
 If this is a forked repo, when unsure about something (PR target, push destination, whether to pull upstream first, etc.), ask — don't assume.
 
+When creating a PR, if the work is associated with GitHub issues, ask the user if they want to link the related issues in the PR body using `Closes #N` keywords.
+
 ## Conventions
 
 - **Timeouts**: All critical async ops use `withTimeout(promise, ms, msg)` helper (10-15s). LIFF init has a separate 10s `Promise.race`.
