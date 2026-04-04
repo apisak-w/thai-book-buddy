@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
 
 type PublisherStat = {
   id: string;
@@ -209,6 +210,11 @@ export default function AdminPage() {
   function sortIndicator(key: SortKey) {
     if (sortKey !== key) return null;
     return sortDir === "desc" ? " ↓" : " ↑";
+  }
+
+  function ariaSort(key: SortKey): "ascending" | "descending" | "none" {
+    if (sortKey !== key) return "none";
+    return sortDir === "asc" ? "ascending" : "descending";
   }
 
   function exportLeaderboard() {
@@ -496,24 +502,28 @@ export default function AdminPage() {
                     <th
                       className="text-left px-5 py-3 text-xs text-gray-400 font-medium cursor-pointer select-none hover:text-gray-600"
                       onClick={() => toggleSort("name_th")}
+                      aria-sort={ariaSort("name_th")}
                     >
                       Publisher{sortIndicator("name_th")}
                     </th>
                     <th
                       className="text-right px-5 py-3 text-xs text-gray-400 font-medium cursor-pointer select-none hover:text-gray-600"
                       onClick={() => toggleSort("saves")}
+                      aria-sort={ariaSort("saves")}
                     >
                       Wishlisted{sortIndicator("saves")}
                     </th>
                     <th
                       className="text-right px-5 py-3 text-xs text-gray-400 font-medium cursor-pointer select-none hover:text-gray-600"
                       onClick={() => toggleSort("books_added")}
+                      aria-sort={ariaSort("books_added")}
                     >
                       Books Added{sortIndicator("books_added")}
                     </th>
                     <th
                       className="text-right px-5 py-3 text-xs text-gray-400 font-medium cursor-pointer select-none hover:text-gray-600"
                       onClick={() => toggleSort("books_per_saver")}
+                      aria-sort={ariaSort("books_per_saver")}
                     >
                       Books/Saver{sortIndicator("books_per_saver")}
                     </th>
@@ -552,21 +562,16 @@ export default function AdminPage() {
       </div>
 
       {/* Publisher detail modal */}
-      {detail && (
-        <div
-          className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center sm:p-4"
-          onClick={() => setDetail(null)}
-        >
-          <div
-            className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[85vh] flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <Dialog open={!!detail} onClose={() => setDetail(null)} className="relative z-50">
+        <DialogBackdrop className="fixed inset-0 bg-black/40" />
+        <div className="fixed inset-0 flex items-end sm:items-center justify-center sm:p-4">
+          <DialogPanel className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[85vh] flex flex-col">
             {/* Modal header */}
             <div className="flex items-start justify-between px-6 py-4 border-b border-gray-100 shrink-0">
               <div>
-                <h2 className="font-bold text-gray-800">{detail.name_th}</h2>
+                <DialogTitle className="font-bold text-gray-800">{detail?.name_th}</DialogTitle>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  {detail.saves} wishlisted · {detail.books_added} books added
+                  {detail?.saves} wishlisted · {detail?.books_added} books added
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -578,6 +583,7 @@ export default function AdminPage() {
                 </button>
                 <button
                   onClick={() => setDetail(null)}
+                  aria-label="ปิด"
                   className="text-gray-400 hover:text-gray-600 text-2xl leading-none ml-1"
                 >
                   ×
@@ -603,7 +609,7 @@ export default function AdminPage() {
 
                     const ageMap = new Map<string, number>();
                     const genderMap = new Map<string, number>();
-                    for (const d of detail.demographics) {
+                    for (const d of detail?.demographics ?? []) {
                       ageMap.set(d.age, (ageMap.get(d.age) ?? 0) + d.count);
                       genderMap.set(d.gender, (genderMap.get(d.gender) ?? 0) + d.count);
                     }
@@ -662,13 +668,13 @@ export default function AdminPage() {
                   })()}
 
                   {/* Book titles */}
-                  {detail.books.length > 0 && (
+                  {(detail?.books.length ?? 0) > 0 && (
                     <div>
                       <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
-                        Books Added by Users ({detail.books.length} titles)
+                        Books Added by Users ({detail?.books.length} titles)
                       </h3>
                       <div className="flex flex-col">
-                        {detail.books.map((b, i) => (
+                        {detail?.books.map((b, i) => (
                           <div
                             key={i}
                             className="flex items-center justify-between py-2 border-b border-gray-50"
@@ -685,8 +691,8 @@ export default function AdminPage() {
                     </div>
                   )}
 
-                  {detail.demographics.length === 0 &&
-                    detail.books.length === 0 && (
+                  {(detail?.demographics.length === 0) &&
+                    (detail?.books.length === 0) && (
                       <p className="text-sm text-gray-400 text-center py-4">
                         ยังไม่มีข้อมูลเพิ่มเติม
                       </p>
@@ -694,9 +700,9 @@ export default function AdminPage() {
                 </div>
               )}
             </div>
-          </div>
+          </DialogPanel>
         </div>
-      )}
+      </Dialog>
     </div>
   );
 }
