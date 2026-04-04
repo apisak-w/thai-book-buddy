@@ -149,17 +149,7 @@ export default function AdminPage() {
     const json = await res.json();
     setData(json);
     setAuthed(true);
-    sessionStorage.setItem("admin_pw", pw);
   }, []);
-
-  // Auto-try stored password on mount
-  useEffect(() => {
-    const stored = sessionStorage.getItem("admin_pw");
-    if (stored) {
-      setPassword(stored);
-      fetchData(stored);
-    }
-  }, [fetchData]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -323,7 +313,6 @@ export default function AdminPage() {
             </button>
             <button
               onClick={() => {
-                sessionStorage.removeItem("admin_pw");
                 setAuthed(false);
                 setData(null);
                 setPassword("");

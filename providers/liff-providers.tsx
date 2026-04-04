@@ -3,6 +3,7 @@
 import { Liff } from "@line/liff";
 import { createContext, useContext, useEffect, useState } from "react";
 import { getSupabase } from "../utils/supabase";
+import { env } from "../utils/env";
 
 interface LIFFContextValue {
   liff: Liff | null;
@@ -89,12 +90,12 @@ async function signInWithLINE(
   let res: Response;
   try {
     res = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/auth-line`,
+      `${env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/auth-line`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          Authorization: `Bearer ${env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({ accessToken }),
         signal: controller.signal,
@@ -171,7 +172,7 @@ function LIFFProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Dev bypass: skip LIFF entirely, force logged-in state
-    if (process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === "true") {
+    if (process.env.NODE_ENV === "development" && env.NEXT_PUBLIC_DEV_BYPASS_AUTH === "true") {
       setIsLoggedIn(true);
       setIsLoading(false);
       return;
@@ -192,7 +193,7 @@ function LIFFProvider({ children }: { children: React.ReactNode }) {
             10_000
           )
         );
-        Promise.race([liff.init({ liffId: process.env.NEXT_PUBLIC_LIFF_ID! }), initTimeout])
+        Promise.race([liff.init({ liffId: env.NEXT_PUBLIC_LIFF_ID }), initTimeout])
           .then(async () => {
             setLiffObject(liff);
             setIsLoggedIn(liff.isLoggedIn());
