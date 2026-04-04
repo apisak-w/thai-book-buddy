@@ -212,13 +212,21 @@ export default function MyListPage() {
   async function togglePurchased(book: Book) {
     const updated = !book.is_purchased;
     setBooks((prev) => prev.map((b) => b.id === book.id ? { ...b, is_purchased: updated } : b));
-    if (updated) {
+    try {
+      const supabase = getSupabase();
+      const { error } = await supabase.from("user_books").update({ is_purchased: updated }).eq("id", book.id);
+      if (error) throw error;
+      if (updated) {
+        if (toastTimer.current) clearTimeout(toastTimer.current);
+        setToast({ message: "ซื้อหนังสือแล้ว 🎉", onUndo: null });
+        toastTimer.current = setTimeout(() => setToast(null), 2500);
+      }
+    } catch {
+      setBooks((prev) => prev.map((b) => b.id === book.id ? { ...b, is_purchased: !updated } : b));
       if (toastTimer.current) clearTimeout(toastTimer.current);
-      setToast({ message: "ซื้อหนังสือแล้ว 🎉", onUndo: null });
-      toastTimer.current = setTimeout(() => setToast(null), 2500);
+      setToast({ message: "เกิดข้อผิดพลาด กรุณาลองใหม่", onUndo: null });
+      toastTimer.current = setTimeout(() => setToast(null), 3000);
     }
-    const supabase = getSupabase();
-    await supabase.from("user_books").update({ is_purchased: updated }).eq("id", book.id);
   }
 
   async function handleBookEdited(bookId: string, title: string, price: number | null) {
