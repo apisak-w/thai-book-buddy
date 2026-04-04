@@ -7,10 +7,11 @@ interface ShareCardProps {
   percentile: number;
   totalSpent: number;
   boothCount: number;
+  offscreen?: boolean;
 }
 
 const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
-  function ShareCard({ purchasedCount, percentile, totalSpent, boothCount }, ref) {
+  function ShareCard({ purchasedCount, percentile, totalSpent, boothCount, offscreen = true }, ref) {
     return (
       <div
         ref={ref}
@@ -23,9 +24,7 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
           flexDirection: "column",
           justifyContent: "space-between",
           fontFamily: "sans-serif",
-          position: "absolute",
-          left: "-9999px",
-          top: 0,
+          ...(offscreen ? { position: "absolute", left: "-9999px", top: 0 } : {}),
         }}
       >
         {/* Header with mascot */}
@@ -67,6 +66,15 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
         <div style={{ textAlign: "center" }}>
           <div
             style={{
+              fontSize: 56,
+              color: "#3d2b1a",
+              fontWeight: 600,
+            }}
+          >
+            ซื้อไปแล้ว
+          </div>
+          <div
+            style={{
               fontSize: 256,
               fontWeight: 900,
               color: "#c4855a",
@@ -83,7 +91,7 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
               fontWeight: 600,
             }}
           >
-            เล่มที่ซื้อแล้ว
+            เล่ม
           </div>
 
           {/* Percentile badge */}
@@ -152,7 +160,7 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
               >
                 ฿{totalSpent.toLocaleString()}
               </div>
-              <div style={{ fontSize: 36, color: "#9c7a5b" }}>รวมทั้งหมด</div>
+              <div style={{ fontSize: 36, color: "#9c7a5b" }}>ค่าเสียหาย</div>
             </div>
           </div>
         </div>
@@ -160,7 +168,7 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
         {/* Footer */}
         <div style={{ textAlign: "center" }}>
           <div style={{ fontSize: 36, color: "#a6a09b" }}>
-            แชร์จาก BookFair Buddy
+            ลองเลย bit.ly/bookfairbuddy
           </div>
         </div>
       </div>

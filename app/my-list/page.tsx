@@ -305,9 +305,23 @@ export default function MyListPage() {
           {/* Brand */}
           <div className="flex flex-col items-start">
             <BrandHeader />
-            <p className="font-[family-name:var(--font-sarabun)] font-semibold text-[32px] text-[#3d2b1a] leading-tight">
-              รายการของฉัน
-            </p>
+            <div className="flex items-center justify-between w-full">
+              <p className="font-[family-name:var(--font-sarabun)] font-semibold text-[32px] text-[#3d2b1a] leading-tight">
+                รายการของฉัน
+              </p>
+              {purchasedCount > 0 && (
+                <button
+                  onClick={handleShare}
+                  disabled={sharing}
+                  className="flex items-center gap-[6px] px-[12px] h-[36px] rounded-[12px] border border-[#e2c9a6] bg-[#fff8ee] active:scale-95 transition-all disabled:opacity-50"
+                >
+                  <Share2 size={16} color="#c4855a" strokeWidth={2} />
+                  <span className="font-[family-name:var(--font-sarabun)] font-medium text-[14px] text-[#c4855a]">
+                    {sharing ? "กำลังสร้าง..." : "แชร์"}
+                  </span>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Summary card */}
@@ -335,18 +349,6 @@ export default function MyListPage() {
               </div>
             </div>
           </div>
-          {purchasedCount > 0 && (
-            <button
-              onClick={handleShare}
-              disabled={sharing}
-              className="flex items-center justify-center gap-[8px] h-[48px] w-full rounded-[16px] border border-[#e2c9a6] bg-[#fff8ee] active:scale-95 transition-all disabled:opacity-50"
-            >
-              <Share2 size={18} color="#c4855a" strokeWidth={2} />
-              <span className="font-[family-name:var(--font-sarabun)] font-medium text-[16px] text-[#c4855a]">
-                {sharing ? "กำลังสร้างรูป..." : "แชร์สถิติของฉัน"}
-              </span>
-            </button>
-          )}
         </div>
 
         {/* Sticky search + count row */}
