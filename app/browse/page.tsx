@@ -27,6 +27,8 @@ export default function BrowsePage() {
   const [pubsError, setPubsError] = useState(false);
   const [pubsRetryKey, setPubsRetryKey] = useState(0);
   const [userLoaded, setUserLoaded] = useState(false);
+  const [userLoadError, setUserLoadError] = useState(false);
+  const [userRetryKey, setUserRetryKey] = useState(0);
   const [bookCounts, setBookCounts] = useState<Map<string, number>>(new Map());
   const [confirmPublisherId, setConfirmPublisherId] = useState<string | null>(null);
   const togglingRef = useRef<Set<string>>(new Set());
@@ -105,13 +107,16 @@ export default function BrowsePage() {
   useEffect(() => {
     if (isPreview || !isLoggedIn) return;
     async function loadUserData() {
+      setUserLoadError(false);
       try {
         const supabase = getSupabase();
-        const [{ data: { session } }, { data: sels }, { data: counts }] = await Promise.all([
+        const [{ data: { session } }, { data: sels, error: selsError }, { data: counts, error: countsError }] = await Promise.all([
           supabase.auth.getSession(),
           supabase.from("user_selections").select("publisher_id"),
           supabase.rpc("get_my_book_counts"),
         ]);
+        if (selsError) throw selsError;
+        if (countsError) throw countsError;
         if (session?.user) setUserId(session.user.id);
         if (sels) setSelectedIds(new Set(sels.map((s: { publisher_id: string }) => s.publisher_id)));
         if (counts) {
@@ -122,12 +127,12 @@ export default function BrowsePage() {
           setBookCounts(map);
         }
       } catch {
-        // Non-critical: list still works, user just won't see their selections
+        setUserLoadError(true);
       }
       setUserLoaded(true);
     }
     loadUserData();
-  }, [isLoggedIn]);
+  }, [isLoggedIn, userRetryKey]);
 
   const categories = useMemo(() => {
     const set = new Set(publishers.flatMap((p) => p.category ?? []));
@@ -249,6 +254,21 @@ export default function BrowsePage() {
               );
             })}
           </div>
+
+          {/* User data error banner */}
+          {userLoadError && (
+            <div className="mx-[16px] mb-[8px] flex items-center justify-between bg-[#fff0e0] border border-[#e2c9a6] rounded-[12px] px-[16px] py-[10px]">
+              <p className="font-[family-name:var(--font-sarabun)] text-[14px] text-[#973c00]">
+                ไม่สามารถโหลดข้อมูลได้
+              </p>
+              <button
+                onClick={() => setUserRetryKey((k) => k + 1)}
+                className="font-[family-name:var(--font-sarabun)] font-medium text-[14px] text-[#c4855a]"
+              >
+                ลองใหม่
+              </button>
+            </div>
+          )}
 
           {/* Count row */}
           <div className="flex items-center justify-between px-[16px] pb-[12px]">
