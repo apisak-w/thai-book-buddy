@@ -6,7 +6,6 @@ import { ChevronRight } from "lucide-react";
 import { getSupabase } from "@/utils/supabase";
 import { useLIFF } from "@/providers/liff-providers";
 import BrandHeader from "@/components/BrandHeader";
-import BottomNav from "@/components/BottomNav";
 import type { Event } from "@/types/events";
 
 export default function EventsPage() {
@@ -14,7 +13,6 @@ export default function EventsPage() {
   const { isLoggedIn, isLoading: authLoading } = useLIFF();
   const [events, setEvents] = useState<Event[]>([]);
   const [myEventIds, setMyEventIds] = useState<Set<string>>(new Set());
-  const [activeEventSlug, setActiveEventSlug] = useState<string | undefined>();
   const [tab, setTab] = useState<"my" | "all">("all");
   const [isLoading, setIsLoading] = useState(true);
 
@@ -36,19 +34,13 @@ export default function EventsPage() {
         if (session?.session?.user) {
           const { data: userEvents } = await supabase
             .from("user_events")
-            .select("event_id, is_active")
+            .select("event_id")
             .eq("user_id", session.session.user.id);
 
           if (userEvents) {
             setMyEventIds(new Set(userEvents.map((ue) => ue.event_id)));
             if (userEvents.length > 0) {
               setTab("my");
-            }
-            // Find the active event slug for BottomNav
-            const activeUe = userEvents.find((ue) => ue.is_active);
-            if (activeUe) {
-              const activeEvt = allEvents.find((e) => e.id === activeUe.event_id);
-              if (activeEvt) setActiveEventSlug(activeEvt.slug);
             }
           }
         }
@@ -200,7 +192,6 @@ export default function EventsPage() {
         </div>
       </div>
 
-      {activeEventSlug && <BottomNav eventSlug={activeEventSlug} />}
     </div>
   );
 }
