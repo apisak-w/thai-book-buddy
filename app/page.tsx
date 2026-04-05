@@ -1,16 +1,38 @@
 "use client";
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useLIFF } from "../providers/liff-providers";
 import OnboardingForm from "../components/OnboardingForm";
+import { getSupabase } from "../utils/supabase";
 
 export default function Home() {
   const { liff, liffError, authError, isLoading, isLoggedIn, needsOnboarding } = useLIFF();
+  const router = useRouter();
 
   useEffect(() => {
     if (!isLoading && isLoggedIn && !needsOnboarding) {
-      window.location.replace("/map");
+      (async () => {
+        const supabase = getSupabase();
+        const { data: session } = await supabase.auth.getSession();
+        if (session?.session?.user) {
+          const { data: activeUserEvent } = await supabase
+            .from("user_events")
+            .select("events(slug, status)")
+            .eq("user_id", session.session.user.id)
+            .eq("is_active", true)
+            .single();
+
+          if (activeUserEvent?.events && (activeUserEvent.events as { status: string }).status === "active") {
+            router.replace(`/events/${(activeUserEvent.events as { slug: string }).slug}/browse`);
+          } else {
+            router.replace("/events");
+          }
+        } else {
+          router.replace("/events");
+        }
+      })();
     }
-  }, [isLoading, isLoggedIn, needsOnboarding]);
+  }, [isLoading, isLoggedIn, needsOnboarding, router]);
 
   return (
     <div className="flex flex-col w-full h-[100dvh] bg-[#fafaf8] overflow-hidden justify-between pt-[188px]">
