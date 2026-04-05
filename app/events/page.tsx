@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/utils/supabase";
 import { useLIFF } from "@/providers/liff-providers";
+import BrandHeader from "@/components/BrandHeader";
+import BottomNav from "@/components/BottomNav";
 import type { Event } from "@/types/events";
 
 export default function EventsPage() {
@@ -23,12 +25,10 @@ export default function EventsPage() {
 
     async function loadData() {
       try {
-        // Fetch all events
         const res = await fetch("/api/events");
         const allEvents: Event[] = await res.json();
         setEvents(allEvents);
 
-        // Fetch user's events
         const supabase = getSupabase();
         const { data: session } = await supabase.auth.getSession();
         if (session?.session?.user) {
@@ -86,35 +86,41 @@ export default function EventsPage() {
   const EventCard = ({ event }: { event: Event }) => (
     <button
       onClick={() => router.push(`/events/${event.slug}/browse`)}
-      className="w-full text-left bg-white rounded-2xl p-4 shadow-sm border border-[#e8dfd5] hover:border-[#c4855a] transition-colors"
+      className="w-full text-left bg-white border border-[#fff8ee] rounded-[16px] p-[24px] cursor-pointer active:opacity-80 transition-opacity"
     >
-      <h3 className="font-bold text-[#44240B] text-lg leading-snug">
+      <p className="font-[family-name:var(--font-sarabun)] font-medium text-[16px] text-[#3d2b1a] leading-snug">
         {event.name_th}
-      </h3>
+      </p>
       {event.name_en && (
-        <p className="text-sm text-[#8B7355] mt-0.5">{event.name_en}</p>
+        <p className="font-[family-name:var(--font-jakarta)] font-light text-[12px] text-[#3d2b1a] mt-[4px] leading-snug">
+          {event.name_en}
+        </p>
       )}
-      <p className="text-sm text-[#8B7355] mt-2">
+      <p className="font-[family-name:var(--font-sarabun)] font-light text-[12px] text-[#9c7a5b] mt-[12px]">
         {formatDate(event.start_date)} - {formatDate(event.end_date)}
       </p>
       {event.location_th && (
-        <p className="text-sm text-[#8B7355] mt-1">{event.location_th}</p>
+        <p className="font-[family-name:var(--font-sarabun)] font-light text-[12px] text-[#9c7a5b] mt-[4px]">
+          {event.location_th}
+        </p>
       )}
       {myEventIds.has(event.id) && (
-        <span className="inline-block mt-2 text-xs bg-[#c4855a]/10 text-[#c4855a] px-2 py-0.5 rounded-full">
-          เข้าร่วมแล้ว
-        </span>
+        <div className="inline-flex self-start items-center px-[12px] py-[4px] rounded-[20px] bg-[#fff8ee] mt-[12px]">
+          <span className="font-[family-name:var(--font-sarabun)] font-light text-[12px] text-[#9c7a5b] whitespace-nowrap">
+            เข้าร่วมแล้ว
+          </span>
+        </div>
       )}
     </button>
   );
 
   const Section = ({ title, items }: { title: string; items: Event[] }) =>
     items.length > 0 ? (
-      <div className="mb-6">
-        <h2 className="text-sm font-semibold text-[#8B7355] uppercase tracking-wide mb-3">
+      <div className="mb-[16px]">
+        <p className="font-[family-name:var(--font-sarabun)] font-light text-[14px] text-[#9c7a5b] mb-[8px]">
           {title}
-        </h2>
-        <div className="space-y-3">
+        </p>
+        <div className="flex flex-col gap-[16px]">
           {items.map((e) => (
             <EventCard key={e.id} event={e} />
           ))}
@@ -123,56 +129,67 @@ export default function EventsPage() {
     ) : null;
 
   return (
-    <div className="min-h-screen bg-[#FBF6F0] pb-8">
-      <div className="sticky top-0 bg-[#FBF6F0] z-10 px-4 pt-6 pb-3">
-        <h1 className="text-2xl font-bold text-[#44240B] font-serif">
-          งานหนังสือ
-        </h1>
-        <p className="text-sm text-[#8B7355] mt-1">เลือกงานที่ต้องการเข้าร่วม</p>
+    <div className="relative flex flex-col w-full h-[100dvh] bg-[#fafaf8]">
+      <div className="flex-1 overflow-y-auto">
+        {/* Header */}
+        <div className="px-[16px] pt-[24px]">
+          <BrandHeader />
+          <p className="font-[family-name:var(--font-sarabun)] font-semibold text-[32px] text-[#3d2b1a] leading-tight mt-[8px]">
+            งานหนังสือ
+          </p>
+          <p className="font-[family-name:var(--font-sarabun)] font-light text-[14px] text-[#9c7a5b] mt-[4px]">
+            เลือกงานที่ต้องการเข้าร่วม
+          </p>
+        </div>
 
-        <div className="flex gap-2 mt-4">
-          <button
-            onClick={() => setTab("my")}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              tab === "my"
-                ? "bg-[#44240B] text-white"
-                : "bg-white text-[#44240B] border border-[#e8dfd5]"
-            }`}
-          >
-            งานของฉัน
-          </button>
-          <button
-            onClick={() => setTab("all")}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              tab === "all"
-                ? "bg-[#44240B] text-white"
-                : "bg-white text-[#44240B] border border-[#e8dfd5]"
-            }`}
-          >
-            ทั้งหมด
-          </button>
+        {/* Tabs */}
+        <div className="sticky top-0 z-10 bg-[#fafaf8]">
+          <div className="flex gap-[8px] px-[16px] py-[12px]">
+            {(["my", "all"] as const).map((t) => {
+              const active = tab === t;
+              const label = t === "my" ? "งานของฉัน" : "ทั้งหมด";
+              return (
+                <button
+                  key={t}
+                  onClick={() => setTab(t)}
+                  className={`shrink-0 px-[12px] py-[4px] rounded-[20px] text-[14px] font-[family-name:var(--font-sarabun)] transition-all ${
+                    active
+                      ? "bg-[#c4855a] text-[#fafaf8] font-semibold"
+                      : "bg-[#fff8ee] border border-[#f0e4d4] text-[#9c7a5b] font-light"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="px-[16px] pb-[16px]">
+          {tab === "my" && myEventIds.size === 0 ? (
+            <div className="flex flex-col items-center justify-center py-[48px]">
+              <p className="font-[family-name:var(--font-sarabun)] text-[15px] text-[#9c7a5b]">
+                ยังไม่ได้เข้าร่วมงานหนังสือ
+              </p>
+              <button
+                onClick={() => setTab("all")}
+                className="mt-[12px] font-[family-name:var(--font-sarabun)] font-medium text-[16px] text-[#c4855a]"
+              >
+                ดูงานทั้งหมด
+              </button>
+            </div>
+          ) : (
+            <>
+              <Section title="กำลังจัดอยู่" items={happening} />
+              <Section title="กำลังจะมาถึง" items={upcoming} />
+              <Section title="จบแล้ว" items={past} />
+            </>
+          )}
         </div>
       </div>
 
-      <div className="px-4 mt-4">
-        {tab === "my" && myEventIds.size === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-[#8B7355]">ยังไม่ได้เข้าร่วมงานหนังสือ</p>
-            <button
-              onClick={() => setTab("all")}
-              className="mt-3 text-[#c4855a] font-medium"
-            >
-              ดูงานทั้งหมด
-            </button>
-          </div>
-        ) : (
-          <>
-            <Section title="กำลังจัดอยู่" items={happening} />
-            <Section title="กำลังจะมาถึง" items={upcoming} />
-            <Section title="จบแล้ว" items={past} />
-          </>
-        )}
-      </div>
+      <BottomNav />
     </div>
   );
 }
