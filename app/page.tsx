@@ -17,13 +17,14 @@ export default function Home() {
         if (session?.session?.user) {
           const { data: activeUserEvent } = await supabase
             .from("user_events")
-            .select("events(slug, status)")
+            .select("event_id, events(slug, status)")
             .eq("user_id", session.session.user.id)
             .eq("is_active", true)
             .single();
 
-          if (activeUserEvent?.events && (activeUserEvent.events as { status: string }).status === "active") {
-            router.replace(`/events/${(activeUserEvent.events as { slug: string }).slug}/browse`);
+          const evt = activeUserEvent?.events as unknown as { slug: string; status: string } | null;
+          if (evt && evt.status === "active") {
+            router.replace(`/events/${evt.slug}/browse`);
           } else {
             router.replace("/events");
           }

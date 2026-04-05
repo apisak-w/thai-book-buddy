@@ -27,13 +27,14 @@ export default function BrowseRedirect() {
       // Find user's active event
       const { data: activeEvent } = await supabase
         .from("user_events")
-        .select("events(slug, status)")
+        .select("event_id, events(slug, status)")
         .eq("user_id", session.session.user.id)
         .eq("is_active", true)
         .single();
 
-      if (activeEvent?.events && (activeEvent.events as { status: string }).status === "active") {
-        router.replace(`/events/${(activeEvent.events as { slug: string }).slug}/browse`);
+      const evt = activeEvent?.events as unknown as { slug: string; status: string } | null;
+      if (evt && evt.status === "active") {
+        router.replace(`/events/${evt.slug}/browse`);
       } else {
         router.replace("/events");
       }

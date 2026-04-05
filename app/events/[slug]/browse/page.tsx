@@ -64,11 +64,11 @@ export default function BrowsePage() {
   useEffect(() => {
     if (isPreview) {
       setPublishers([
-        { id: "mock-1", name_th: "สำนักพิมพ์แสงดาว", name_en: "Sangdao Publishing", booths: [{ zone: "A", booth_number: "A01" }] },
-        { id: "mock-2", name_th: "นานมีบุ๊คส์", name_en: "Nanmeebooks", booths: [{ zone: "B", booth_number: "B12" }] },
-        { id: "mock-3", name_th: "อมรินทร์", name_en: "Amarin", booths: [{ zone: "C", booth_number: "C05" }] },
-        { id: "mock-4", name_th: "มติชน", name_en: "Matichon", booths: [{ zone: "D", booth_number: "D08" }] },
-        { id: "mock-5", name_th: "บ้านพระอาทิตย์", name_en: "Baan Phra Arthit", booths: [{ zone: "E", booth_number: "E03" }] },
+        { id: "mock-1", name_th: "สำนักพิมพ์แสงดาว", name_en: "Sangdao Publishing", event_id: "mock-event", booths: [{ zone: "A", booth_number: "A01" }] },
+        { id: "mock-2", name_th: "นานมีบุ๊คส์", name_en: "Nanmeebooks", event_id: "mock-event", booths: [{ zone: "B", booth_number: "B12" }] },
+        { id: "mock-3", name_th: "อมรินทร์", name_en: "Amarin", event_id: "mock-event", booths: [{ zone: "C", booth_number: "C05" }] },
+        { id: "mock-4", name_th: "มติชน", name_en: "Matichon", event_id: "mock-event", booths: [{ zone: "D", booth_number: "D08" }] },
+        { id: "mock-5", name_th: "บ้านพระอาทิตย์", name_en: "Baan Phra Arthit", event_id: "mock-event", booths: [{ zone: "E", booth_number: "E03" }] },
       ]);
       setUserId("preview-user");
       setSelectedIds(new Set(["mock-1", "mock-3"]));
