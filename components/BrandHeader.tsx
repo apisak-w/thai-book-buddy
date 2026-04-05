@@ -14,7 +14,7 @@ export default function BrandHeader({ eventName }: { eventName?: string }) {
       {eventName ? (
         <Link
           href="/events"
-          className="flex items-center gap-[4px] px-[12px] py-[4px] rounded-[20px] bg-[#c4855a] font-[family-name:var(--font-sarabun)] font-semibold text-[12px] text-[#fafaf8] hover:bg-[#b3774f] transition-colors min-w-0"
+          className="flex items-center gap-[4px] px-[12px] py-[4px] rounded-[20px] bg-[#c4855a] font-[family-name:var(--font-sarabun)] font-semibold text-[14px] text-[#fafaf8] hover:bg-[#b3774f] transition-all min-w-0"
         >
           <span className="truncate">{eventName}</span>
           <ChevronDown size={10} strokeWidth={2.5} className="shrink-0" />
