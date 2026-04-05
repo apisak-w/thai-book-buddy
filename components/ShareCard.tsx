@@ -8,10 +8,11 @@ interface ShareCardProps {
   totalSpent: number;
   boothCount: number;
   offscreen?: boolean;
+  eventName?: string;
 }
 
 const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
-  function ShareCard({ purchasedCount, percentile, totalSpent, boothCount, offscreen = true }, ref) {
+  function ShareCard({ purchasedCount, percentile, totalSpent, boothCount, offscreen = true, eventName }, ref) {
     return (
       <div
         ref={ref}
@@ -57,7 +58,7 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
                 marginTop: 8,
               }}
             >
-              งานสัปดาห์หนังสือ 2569
+              {eventName ?? "งานสัปดาห์หนังสือ 2569"}
             </div>
           </div>
         </div>
