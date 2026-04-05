@@ -4,32 +4,32 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search, Bookmark, Map } from "lucide-react";
 
-const tabs = [
-  {
-    href: "/map",
-    label: "ผังงาน",
-    icon: (active: boolean) => (
-      <Map size={24} color={active ? "#973c00" : "#a6a09b"} strokeWidth={1.8} />
-    ),
-  },
-  {
-    href: "/browse",
-    label: "ค้นหา",
-    icon: (active: boolean) => (
-      <Search size={24} color={active ? "#973c00" : "#a6a09b"} strokeWidth={1.8} />
-    ),
-  },
-  {
-    href: "/my-list",
-    label: "รายการของฉัน",
-    icon: (active: boolean) => (
-      <Bookmark size={24} color={active ? "#973c00" : "#a6a09b"} strokeWidth={1.8} />
-    ),
-  },
-];
-
-export default memo(function BottomNav() {
+export default memo(function BottomNav({ eventSlug }: { eventSlug?: string }) {
   const pathname = usePathname();
+  const basePath = eventSlug ? `/events/${eventSlug}` : "";
+  const tabs = [
+    {
+      href: `${basePath}/map`,
+      label: "ผังงาน",
+      icon: (active: boolean) => (
+        <Map size={24} color={active ? "#973c00" : "#a6a09b"} strokeWidth={1.8} />
+      ),
+    },
+    {
+      href: `${basePath}/browse`,
+      label: "ค้นหา",
+      icon: (active: boolean) => (
+        <Search size={24} color={active ? "#973c00" : "#a6a09b"} strokeWidth={1.8} />
+      ),
+    },
+    {
+      href: `${basePath}/my-list`,
+      label: "รายการของฉัน",
+      icon: (active: boolean) => (
+        <Bookmark size={24} color={active ? "#973c00" : "#a6a09b"} strokeWidth={1.8} />
+      ),
+    },
+  ];
 
   return (
     <nav aria-label="เมนูหลัก" className="shrink-0 border-t border-[#f0e4d4] bg-[#fafaf8]">
