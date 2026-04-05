@@ -294,13 +294,13 @@ export default function EventMyListPage() {
   if (loadError) return <ErrorScreen onRetry={() => { setLoadError(false); setLoading(true); setRetryKey((k) => k + 1); }} />;
 
   return (
-    <div className="relative flex flex-col w-full h-full bg-[#fafaf8]">
+    <div className="relative flex flex-col w-full h-[100dvh] bg-[#fafaf8]">
       <div className="flex-1 overflow-y-auto">
         {/* Header */}
         <div className="flex flex-col gap-[16px] px-[16px] pt-[24px] pb-[12px]">
           {/* Brand */}
           <div className="flex flex-col items-start">
-            <BrandHeader />
+            <BrandHeader eventName={event?.name_th} />
             <div className="flex items-center justify-between w-full">
               <p className="font-[family-name:var(--font-sarabun)] font-semibold text-[32px] text-[#3d2b1a] leading-tight">
                 รายการของฉัน

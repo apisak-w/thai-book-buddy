@@ -173,10 +173,10 @@ export default function EventMapPage() {
   }
 
   return (
-    <div className="flex flex-col w-full h-full bg-[#fafaf8] overflow-hidden">
+    <div className="flex flex-col w-full h-[100dvh] bg-[#fafaf8] overflow-hidden">
       {/* Header */}
       <div className="shrink-0 px-[16px] pt-[24px] pb-[10px]">
-        <BrandHeader />
+        <BrandHeader eventName={event?.name_th} />
         <div className="flex items-center justify-between">
           <p className="font-[family-name:var(--font-sarabun)] font-semibold text-[32px] text-[#3d2b1a] leading-tight">
             ผังงาน

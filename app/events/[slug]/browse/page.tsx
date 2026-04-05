@@ -19,7 +19,7 @@ import { env } from "@/utils/env";
 
 export default function BrowsePage() {
   const { isLoggedIn, isLoading: authLoading } = useLIFF();
-  const { eventId, eventSlug, isLoading: eventLoading, error: eventError } = useEvent();
+  const { event, eventId, eventSlug, isLoading: eventLoading, error: eventError } = useEvent();
   const router = useRouter();
 
   const [publishers, setPublishers] = useState<Publisher[]>([]);
@@ -238,12 +238,12 @@ export default function BrowsePage() {
   if (pubsError) return <ErrorScreen onRetry={() => { setPubsError(false); setPubsLoaded(false); setPubsRetryKey((k) => k + 1); }} />;
 
   return (
-    <div className="relative flex flex-col w-full h-full bg-[#fafaf8]">
+    <div className="relative flex flex-col w-full h-[100dvh] bg-[#fafaf8]">
       {/* Scrollable area — header scrolls away, search stays sticky */}
       <div className="flex-1 overflow-y-auto">
         {/* Header — scrolls away */}
         <div className="px-[16px] pt-[24px]">
-          <BrandHeader />
+          <BrandHeader eventName={event?.name_th} />
         </div>
 
         {/* Sticky search + filter */}
