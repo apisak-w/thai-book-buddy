@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ChevronRight } from "lucide-react";
 import { getSupabase } from "@/utils/supabase";
 import { useLIFF } from "@/providers/liff-providers";
 import BrandHeader from "@/components/BrandHeader";
@@ -13,6 +14,7 @@ export default function EventsPage() {
   const { isLoggedIn, isLoading: authLoading } = useLIFF();
   const [events, setEvents] = useState<Event[]>([]);
   const [myEventIds, setMyEventIds] = useState<Set<string>>(new Set());
+  const [activeEventSlug, setActiveEventSlug] = useState<string | undefined>();
   const [tab, setTab] = useState<"my" | "all">("all");
   const [isLoading, setIsLoading] = useState(true);
 
@@ -34,13 +36,19 @@ export default function EventsPage() {
         if (session?.session?.user) {
           const { data: userEvents } = await supabase
             .from("user_events")
-            .select("event_id")
+            .select("event_id, is_active")
             .eq("user_id", session.session.user.id);
 
           if (userEvents) {
             setMyEventIds(new Set(userEvents.map((ue) => ue.event_id)));
             if (userEvents.length > 0) {
               setTab("my");
+            }
+            // Find the active event slug for BottomNav
+            const activeUe = userEvents.find((ue) => ue.is_active);
+            if (activeUe) {
+              const activeEvt = allEvents.find((e) => e.id === activeUe.event_id);
+              if (activeEvt) setActiveEventSlug(activeEvt.slug);
             }
           }
         }
@@ -86,31 +94,34 @@ export default function EventsPage() {
   const EventCard = ({ event }: { event: Event }) => (
     <button
       onClick={() => router.push(`/events/${event.slug}/browse`)}
-      className="w-full text-left bg-white border border-[#fff8ee] rounded-[16px] p-[24px] cursor-pointer active:opacity-80 transition-opacity"
+      className="w-full text-left bg-white border border-[#fff8ee] rounded-[16px] p-[24px] flex items-center gap-[16px] cursor-pointer active:opacity-80 transition-opacity"
     >
-      <p className="font-[family-name:var(--font-sarabun)] font-medium text-[16px] text-[#3d2b1a] leading-snug">
-        {event.name_th}
-      </p>
-      {event.name_en && (
-        <p className="font-[family-name:var(--font-jakarta)] font-light text-[12px] text-[#3d2b1a] mt-[4px] leading-snug">
-          {event.name_en}
+      <div className="flex-1 min-w-0">
+        <p className="font-[family-name:var(--font-sarabun)] font-medium text-[16px] text-[#3d2b1a] leading-snug">
+          {event.name_th}
         </p>
-      )}
-      <p className="font-[family-name:var(--font-sarabun)] font-light text-[12px] text-[#9c7a5b] mt-[12px]">
-        {formatDate(event.start_date)} - {formatDate(event.end_date)}
-      </p>
-      {event.location_th && (
-        <p className="font-[family-name:var(--font-sarabun)] font-light text-[12px] text-[#9c7a5b] mt-[4px]">
-          {event.location_th}
+        {event.name_en && (
+          <p className="font-[family-name:var(--font-jakarta)] font-light text-[12px] text-[#3d2b1a] mt-[4px] leading-snug">
+            {event.name_en}
+          </p>
+        )}
+        <p className="font-[family-name:var(--font-sarabun)] font-light text-[12px] text-[#9c7a5b] mt-[12px]">
+          {formatDate(event.start_date)} - {formatDate(event.end_date)}
         </p>
-      )}
-      {myEventIds.has(event.id) && (
-        <div className="inline-flex self-start items-center px-[12px] py-[4px] rounded-[20px] bg-[#fff8ee] mt-[12px]">
-          <span className="font-[family-name:var(--font-sarabun)] font-light text-[12px] text-[#9c7a5b] whitespace-nowrap">
-            เข้าร่วมแล้ว
-          </span>
-        </div>
-      )}
+        {event.location_th && (
+          <p className="font-[family-name:var(--font-sarabun)] font-light text-[12px] text-[#9c7a5b] mt-[4px]">
+            {event.location_th}
+          </p>
+        )}
+        {myEventIds.has(event.id) && (
+          <div className="inline-flex self-start items-center px-[12px] py-[4px] rounded-[20px] bg-[#fff8ee] mt-[12px]">
+            <span className="font-[family-name:var(--font-sarabun)] font-light text-[12px] text-[#9c7a5b] whitespace-nowrap">
+              เข้าร่วมแล้ว
+            </span>
+          </div>
+        )}
+      </div>
+      <ChevronRight size={20} color="#9c7a5b" strokeWidth={1.5} className="shrink-0" />
     </button>
   );
 
@@ -189,7 +200,7 @@ export default function EventsPage() {
         </div>
       </div>
 
-      <BottomNav />
+      <BottomNav eventSlug={activeEventSlug} />
     </div>
   );
 }
