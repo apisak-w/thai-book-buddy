@@ -94,7 +94,7 @@ export default function EventsPage() {
   const EventCard = ({ event }: { event: Event }) => (
     <button
       onClick={() => router.push(`/events/${event.slug}/browse`)}
-      className="w-full text-left bg-white border border-[#fff8ee] rounded-[16px] p-[24px] flex items-center gap-[16px] cursor-pointer active:opacity-80 transition-opacity"
+      className="w-full text-left bg-white border border-[#f0e4d4] rounded-[16px] p-[24px] flex items-center gap-[16px] cursor-pointer active:opacity-80 transition-opacity"
     >
       <div className="flex-1 min-w-0">
         <p className="font-[family-name:var(--font-sarabun)] font-medium text-[16px] text-[#3d2b1a] leading-snug">
