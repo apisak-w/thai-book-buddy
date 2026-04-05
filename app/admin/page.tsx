@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
+import type { Event } from "@/types/events";
 
 type PublisherStat = {
   id: string;
@@ -136,10 +137,23 @@ export default function AdminPage() {
   const [dauTo, setDauTo] = useState("");
   const [detail, setDetail] = useState<(PublisherDetail & { id: string }) | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState<string>("");
 
-  const fetchData = useCallback(async (pw: string) => {
+  useEffect(() => {
+    fetch("/api/events")
+      .then((res) => res.json())
+      .then((data: Event[]) => {
+        setEvents(data);
+        const active = data.find((e) => e.status === "active");
+        if (active) setSelectedEventId(active.id);
+      });
+  }, []);
+
+  const fetchData = useCallback(async (pw: string, eventId?: string) => {
     setLoading(true);
-    const res = await fetch("/api/admin/data", {
+    const url = `/api/admin/data${eventId ? `?event_id=${eventId}` : ""}`;
+    const res = await fetch(url, {
       headers: { "x-admin-password": pw },
     });
     setLoading(false);
@@ -152,11 +166,17 @@ export default function AdminPage() {
     setAuthed(true);
   }, []);
 
+  useEffect(() => {
+    if (authed && selectedEventId) {
+      fetchData(password, selectedEventId);
+    }
+  }, [selectedEventId, authed, password, fetchData]);
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setAuthError(false);
     setPassword(input);
-    fetchData(input);
+    fetchData(input, selectedEventId || undefined);
   }
 
   async function openDetail(pub: PublisherStat) {
@@ -310,7 +330,20 @@ export default function AdminPage() {
               งานสัปดาห์หนังสือแห่งชาติ — 26 มี.ค. – 6 เม.ย. 2569
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            {events.length > 0 && (
+              <select
+                value={selectedEventId}
+                onChange={(e) => setSelectedEventId(e.target.value)}
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              >
+                {events.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.name_th}
+                  </option>
+                ))}
+              </select>
+            )}
             <button
               onClick={exportLeaderboard}
               className="text-sm px-4 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors"
