@@ -120,5 +120,5 @@ CREATE POLICY "Users can update own user_events"
 -- 9. Backfill user_events from existing user_selections
 -- ============================================================
 INSERT INTO user_events (user_id, event_id, is_active)
-SELECT DISTINCT user_id, 'a0000000-0000-0000-0000-000000000001', true
+SELECT DISTINCT user_id, 'a0000000-0000-0000-0000-000000000001'::uuid, true
 FROM user_selections;
