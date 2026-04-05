@@ -177,16 +177,9 @@ export default function EventMapPage() {
       {/* Header */}
       <div className="shrink-0 px-[16px] pt-[24px] pb-[10px]">
         <BrandHeader eventName={event?.name_th} />
-        <div className="flex items-center justify-between">
-          <p className="font-[family-name:var(--font-sarabun)] font-semibold text-[32px] text-[#3d2b1a] leading-tight">
-            ผังงาน
-          </p>
-          <div className="px-[10px] py-[4px] rounded-full bg-[#f0e4d4]">
-            <p className="font-[family-name:var(--font-sarabun)] font-light text-[11px] text-[#973c00]">
-              {event?.name_th ?? "แผนที่"}
-            </p>
-          </div>
-        </div>
+        <p className="font-[family-name:var(--font-sarabun)] font-semibold text-[32px] text-[#3d2b1a] leading-tight">
+          ผังงาน
+        </p>
       </div>
 
       {/* Map */}
