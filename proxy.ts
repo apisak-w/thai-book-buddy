@@ -10,7 +10,7 @@ export function proxy(request: NextRequest) {
     `style-src 'self' 'unsafe-inline'`,
     `img-src 'self' data: https://*.line-scdn.net`,
     `font-src 'self' data:`,
-    `connect-src 'self' https://*.supabase.co https://*.line.me https://*.line-scdn.net`,
+    `connect-src 'self' https://*.supabase.co https://*.line.me https://*.line-scdn.net http://127.0.0.1:*`,
     `frame-src https://liff.line.me`,
     `frame-ancestors 'self' https://*.line.me`,
   ].join("; ");
