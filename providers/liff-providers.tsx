@@ -205,21 +205,6 @@ function LIFFProvider({ children }: { children: React.ReactNode }) {
                 setAuthError(error);
                 liff.logout();
                 setIsLoggedIn(false);
-              } else {
-                // Record session for DAU tracking (once per day per user)
-                const supabase = getSupabase();
-                supabase.auth.getSession().then(({ data }) => {
-                  if (!data?.session?.user) return;
-                  const uid = data.session.user.id;
-                  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-                  const sessionKey = `session_recorded_${today}`;
-                  if (localStorage.getItem(sessionKey)) return; // already recorded today
-                  supabase.from("sessions").insert({ user_id: uid })
-                    .then(({ error }) => {
-                      if (!error) localStorage.setItem(sessionKey, "1");
-                      else console.error("[DB] Session insert failed:", error.message);
-                    });
-                });
               }
               setNeedsOnboarding(needsOnboarding);
             }
