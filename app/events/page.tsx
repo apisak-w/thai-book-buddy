@@ -200,7 +200,7 @@ export default function EventsPage() {
         </div>
       </div>
 
-      <BottomNav eventSlug={activeEventSlug} />
+      {activeEventSlug && <BottomNav eventSlug={activeEventSlug} />}
     </div>
   );
 }
