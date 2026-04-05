@@ -8,6 +8,7 @@ export interface Publisher {
   name_th: string;
   name_en: string | null;
   category?: string[];
+  event_id: string;
   booths: Booth[];
 }
 
@@ -17,4 +18,5 @@ export interface Book {
   title: string;
   price: number | null;
   is_purchased: boolean;
+  event_id: string;
 }
