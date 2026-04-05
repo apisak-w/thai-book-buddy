@@ -16,7 +16,7 @@ import SearchBar from "@/components/SearchBar";
 import PublisherListItem from "@/components/PublisherListItem";
 import type { Publisher, Book } from "@/types";
 import { env } from "@/utils/env";
-import { exportAsJSON, exportAsCSV } from "@/utils/export";
+// import { exportAsJSON, exportAsCSV } from "@/utils/export";
 
 export default function EventMyListPage() {
   const { isLoggedIn, isLoading: authLoading } = useLIFF();
@@ -318,23 +318,6 @@ export default function EventMyListPage() {
             </div>
           </div>
 
-          {/* Export buttons */}
-          {event && (
-            <div className="flex gap-2">
-              <button
-                onClick={() => exportAsJSON(event, publishers, books, notesByPublisher)}
-                className="text-sm text-[#c4855a] font-medium"
-              >
-                Export JSON
-              </button>
-              <button
-                onClick={() => exportAsCSV(event, publishers, books, notesByPublisher)}
-                className="text-sm text-[#c4855a] font-medium"
-              >
-                Export CSV
-              </button>
-            </div>
-          )}
 
           {/* Summary card */}
           <div className="bg-[#f3ffeb] border border-[#c4d8b6] rounded-[16px] p-[24px]">
