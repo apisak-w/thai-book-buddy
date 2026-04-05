@@ -173,7 +173,7 @@ export default function EventMapPage() {
   }
 
   return (
-    <div className="flex flex-col w-full h-[100dvh] bg-[#fafaf8] overflow-hidden">
+    <div className="flex flex-col w-full h-full bg-[#fafaf8] overflow-hidden">
       {/* Header */}
       <div className="shrink-0 px-[16px] pt-[24px] pb-[10px]">
         <BrandHeader />

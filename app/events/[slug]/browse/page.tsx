@@ -238,7 +238,7 @@ export default function BrowsePage() {
   if (pubsError) return <ErrorScreen onRetry={() => { setPubsError(false); setPubsLoaded(false); setPubsRetryKey((k) => k + 1); }} />;
 
   return (
-    <div className="relative flex flex-col w-full h-[100dvh] bg-[#fafaf8]">
+    <div className="relative flex flex-col w-full h-full bg-[#fafaf8]">
       {/* Scrollable area — header scrolls away, search stays sticky */}
       <div className="flex-1 overflow-y-auto">
         {/* Header — scrolls away */}
