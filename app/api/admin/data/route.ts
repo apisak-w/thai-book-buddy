@@ -11,17 +11,35 @@ function adminClient() {
 }
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
-let cachedResult: { data: unknown; timestamp: number } | null = null;
+const cacheByEvent = new Map<string, { data: unknown; timestamp: number }>();
 
 export async function GET(req: NextRequest) {
   const denied = checkAdminAuth(req);
   if (denied) return denied;
 
+  const eventId = req.nextUrl.searchParams.get("event_id");
+
+  const supabaseAdmin = adminClient();
+
+  let resolvedEventId = eventId;
+  if (!resolvedEventId) {
+    const { data: activeEvent } = await supabaseAdmin
+      .from("events")
+      .select("id")
+      .eq("status", "active")
+      .order("start_date", { ascending: false })
+      .limit(1)
+      .single();
+    resolvedEventId = activeEvent?.id;
+  }
+
+  const cacheKey = resolvedEventId ?? "__none__";
+  const cachedResult = cacheByEvent.get(cacheKey);
   if (cachedResult && Date.now() - cachedResult.timestamp < CACHE_TTL_MS) {
     return NextResponse.json(cachedResult.data);
   }
 
-  const supabase = adminClient();
+  const supabase = supabaseAdmin;
 
   const [
     { data: publisherStatsRaw },
@@ -31,12 +49,16 @@ export async function GET(req: NextRequest) {
     { count: totalBooks },
     { data: demoRows },
   ] = await Promise.all([
-    supabase.rpc("admin_get_publisher_stats"),
-    supabase.rpc("admin_get_dau"),
+    supabase.rpc("admin_get_publisher_stats", { p_event_id: resolvedEventId }),
+    supabase.rpc("admin_get_dau", { p_event_id: resolvedEventId }),
     supabase.from("profiles").select("*", { count: "exact", head: true }),
-    supabase.from("user_selections").select("*", { count: "exact", head: true }),
-    supabase.from("user_books").select("*", { count: "exact", head: true }),
-    supabase.rpc("admin_get_global_demographics"),
+    resolvedEventId
+      ? supabase.from("user_selections").select("*", { count: "exact", head: true }).eq("event_id", resolvedEventId)
+      : supabase.from("user_selections").select("*", { count: "exact", head: true }),
+    resolvedEventId
+      ? supabase.from("user_books").select("*", { count: "exact", head: true }).eq("event_id", resolvedEventId)
+      : supabase.from("user_books").select("*", { count: "exact", head: true }),
+    supabase.rpc("admin_get_global_demographics", { p_event_id: resolvedEventId }),
   ]);
 
   const publisherStats = (publisherStatsRaw ?? []).map((p: {
@@ -94,7 +116,7 @@ export async function GET(req: NextRequest) {
   };
 
   // Top 10 books globally via RPC (avoids PostgREST max_rows cap on full-table scans)
-  const { data: topBooksData } = await supabase.rpc("admin_get_top_books", { n: 10 });
+  const { data: topBooksData } = await supabase.rpc("admin_get_top_books", { p_event_id: resolvedEventId, n: 10 });
   const top_books = (topBooksData ?? []).map((b: { title: string; count: number; publisher_name: string }) => ({
     title: b.title,
     count: Number(b.count),
@@ -102,6 +124,6 @@ export async function GET(req: NextRequest) {
   }));
 
   const result = { publishers: publisherStats, dau, totals, demographics, top_books };
-  cachedResult = { data: result, timestamp: Date.now() };
+  cacheByEvent.set(cacheKey, { data: result, timestamp: Date.now() });
   return NextResponse.json(result);
 }
