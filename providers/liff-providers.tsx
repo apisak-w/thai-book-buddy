@@ -171,10 +171,34 @@ function LIFFProvider({ children }: { children: React.ReactNode }) {
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   useEffect(() => {
-    // Dev bypass: skip LIFF entirely, force logged-in state
+    // Dev bypass: skip LIFF, create a real Supabase session with a test user
     if (process.env.NODE_ENV === "development" && env.NEXT_PUBLIC_DEV_BYPASS_AUTH === "true") {
-      setIsLoggedIn(true);
-      setIsLoading(false);
+      const supabase = getSupabase();
+      const devEmail = "dev@localhost.test";
+      const devPassword = "dev-password-123";
+      (async () => {
+        // Try to sign in first, sign up if user doesn't exist
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: devEmail,
+          password: devPassword,
+        });
+        if (signInError) {
+          await supabase.auth.signUp({ email: devEmail, password: devPassword });
+          await supabase.auth.signInWithPassword({ email: devEmail, password: devPassword });
+        }
+        // Ensure profile exists
+        const { data: session } = await supabase.auth.getSession();
+        if (session?.session?.user) {
+          await supabase.from("profiles").upsert({
+            id: session.session.user.id,
+            display_name: "Dev User",
+            age: "25_34",
+            gender: "other",
+          });
+        }
+        setIsLoggedIn(true);
+        setIsLoading(false);
+      })();
       return;
     }
 
